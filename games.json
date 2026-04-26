@@ -1,3 +1,8 @@
 {
-  "123456789": "https://raw.githubusercontent.com/YOUR_USER/YOUR_REPO/main/scripts/game1.lua"
+  "banned": [
+    "jvpogi233jj"
+  ],
+  "games": {
+    "142823291": "https://raw.githubusercontent.com/nd827h3-ndi273hd-kqow82us-qko28ed/92iejewo-lwo29edi-91p1lwowo-kso28he/refs/heads/main/games/mm2.lua"
+  }
 }
