@@ -1,5 +1,5 @@
 -- LocalScript: StarterPlayerScripts
-
+print("V2.283.0")
 if _G.__MurderHUD_Running then return end
 _G.__MurderHUD_Running = true
 
