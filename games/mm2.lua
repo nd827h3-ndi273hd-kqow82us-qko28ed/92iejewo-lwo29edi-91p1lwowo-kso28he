@@ -3,9 +3,6 @@
 if _G.__MurderHUD_Running then return end
 _G.__MurderHUD_Running = true
 
-local WALK_LEAD = 4.6
-local WALK_LEAD_SLOW = 1.4
-local WALK_LEAD_THROW = 0.4
 local BULLET_DELAY    = 0.32
 local VEL_SMOOTH_SIZE  = 4
 local SPAM_JUMP_VEL    = 35
@@ -656,125 +653,57 @@ local function getAimPosition()
     local hrp = char:FindFirstChild("HumanoidRootPart")
     if not hrp then return nil end
 
-    local torso = char:FindFirstChild("UpperTorso") or char:FindFirstChild("Torso")
-    local head  = char:FindFirstChild("Head")
-    local hum   = char:FindFirstChildOfClass("Humanoid")
-
+    local hum    = char:FindFirstChildOfClass("Humanoid")
     local myChar = lp.Character
     local myHRP  = myChar and myChar:FindFirstChild("HumanoidRootPart")
     if not myHRP then return nil end
 
     local rawVel  = hrp.AssemblyLinearVelocity
     local smoothV = getSmoothedVel(murderer)
+    local vel     = smoothV * 0.6 + rawVel * 0.4
 
-    local vel = smoothV * 0.6 + rawVel * 0.4
-
-    local pos   = hrp.Position
-    local hVel  = Vector3.new(vel.X, 0, vel.Z)
-    local speed = hVel.Magnitude
+    local dt = BULLET_DELAY
 
     local isAir      = hum and hum.FloorMaterial == Enum.Material.Air
     local isClimbing = hum and hum:GetState() == Enum.HumanoidStateType.Climbing
     local inAir      = isAir and not isClimbing
 
-    local torsoOff = torso and (torso.Position - pos) or Vector3.new(0, 0.9, 0)
-    local headOff  = head  and (head.Position  - pos) or Vector3.new(0, 2.5, 0)
-
-    local dist  = (pos - myHRP.Position).Magnitude
-    local dt    = BULLET_DELAY + math.clamp(dist / 400, 0, 0.1)
-
-    -- ── Idle on ground: shoot current torso with visibility check ───────────
-    if speed < 1.5 and not inAir then
-        local target = torso and torso.Position or (pos + torsoOff)
-        rayParams.FilterDescendantsInstances = { myChar, char }
-        local dir = target - myHRP.Position
-        local hit = Workspace:Raycast(myHRP.Position, dir, rayParams)
-        if not hit or hit.Instance:IsDescendantOf(char) then return target end
-        if head then
-            local hDir = head.Position - myHRP.Position
-            local hHit = Workspace:Raycast(myHRP.Position, hDir, rayParams)
-            if not hHit or hHit.Instance:IsDescendantOf(char) then return head.Position end
-        end
-        return target
-    end
-
-    -- ── Horizontal prediction (constant velocity, blended) ──────────────────
-    local LEAD_FAST   = 4.6   -- speed >= 15.87
-    local LEAD_SLOW   = 1.4   -- speed >= 9
-    local LEAD_THROW  = 0.4   -- speed > 0 but slow
-
-    local hUnit  = hVel.Magnitude > 0 and hVel.Unit or Vector3.zero
-    local lead
-    if speed >= 15.8 then
-        lead = LEAD_FAST
-    elseif speed >= 11 then
-        lead = LEAD_SLOW
-    elseif speed > 0 then
-        lead = LEAD_THROW
-    else
-        lead = 0
-    end
-
-    local hOffset = hUnit * lead
-    local predX   = pos.X + hOffset.X
-    local predZ   = pos.Z + hOffset.Z
-
-    -- ── Vertical prediction ─────────────────────────────────────────────────
+    local predX = hrp.Position.X + vel.X * dt
+    local predZ = hrp.Position.Z + vel.Z * dt
     local predY
     if inAir then
-        local velY = vel.Y
-
-        -- Spam-jump: player just left ground with high upward velocity.
-        -- Within dt they may reach apex and start falling.
-        -- Predict to the apex if apex occurs within dt, otherwise full physics.
-        if velY >= SPAM_JUMP_VEL then
-            local tApex = velY / GRAVITY          -- time to reach apex
-            if tApex <= dt then
-                -- Will reach apex and fall for remaining (dt - tApex)
-                local apexY   = pos.Y + velY * tApex - 0.5 * GRAVITY * tApex * tApex
-                local fallDt  = dt - tApex
-                predY = apexY - 0.5 * GRAVITY * fallDt * fallDt
-            else
-                -- Still ascending at bullet arrival
-                predY = pos.Y + velY * dt - 0.5 * GRAVITY * dt * dt
-            end
-        elseif velY < 0 then
-            -- Falling or at apex: check if they'd land before dt
-            -- Conservative: full physics, but clamp so we don't go underground
-            predY = pos.Y + velY * dt - 0.5 * GRAVITY * dt * dt
-            -- If prediction goes below current ground level, clamp to HRP Y
-            -- (spam-jumper will re-jump so aim near floor level)
-            if predY < pos.Y - 8 then
-                predY = pos.Y - 4   -- aim at waist height as they land/re-jump
-            end
-        else
-            -- Slow ascent or near apex
-            predY = pos.Y + velY * dt - 0.5 * GRAVITY * dt * dt
-        end
+        predY = hrp.Position.Y + vel.Y * dt - 0.5 * GRAVITY * dt * dt
     else
-        predY = pos.Y  -- grounded: no vertical offset needed
+        predY = hrp.Position.Y
     end
-
     local predHRP = Vector3.new(predX, predY, predZ)
 
-    -- Predicted body-part positions
-    local candidates = {
-        predHRP + torsoOff,   -- primary
-        predHRP + headOff,    -- secondary
-        predHRP,              -- HRP fallback
+    -- Priority: torso first, then head, then HRP, then limbs
+    local partNames = {
+        "UpperTorso", "Torso",
+        "Head",
+        "HumanoidRootPart",
+        "LeftUpperArm",  "Left Arm",
+        "RightUpperArm", "Right Arm",
+        "LeftUpperLeg",  "Left Leg",
+        "RightUpperLeg", "Right Leg",
     }
 
-    -- ── Visibility: pick first unobstructed predicted point ─────────────────
     rayParams.FilterDescendantsInstances = { myChar, char }
-    for _, cPos in ipairs(candidates) do
-        local dir = cPos - myHRP.Position
-        local hit = Workspace:Raycast(myHRP.Position, dir, rayParams)
-        if not hit or hit.Instance:IsDescendantOf(char) then
-            return cPos
+
+    for _, name in ipairs(partNames) do
+        local part = char:FindFirstChild(name)
+        if part and part:IsA("BasePart") then
+            local dir = part.Position - myHRP.Position
+            local hit = Workspace:Raycast(myHRP.Position, dir, rayParams)
+            if not hit or hit.Instance:IsDescendantOf(char) then
+                local offset = part.Position - hrp.Position
+                return predHRP + offset
+            end
         end
     end
 
-    return candidates[1]  -- all blocked: best guess
+    return predHRP
 end
 
 -- ── Remote getters ────────────────────────────────────────────────────────────
