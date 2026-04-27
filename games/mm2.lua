@@ -678,15 +678,48 @@ local function getAimPosition()
     end
     local predHRP = Vector3.new(predX, predY, predZ)
 
+    local function getAimPosition()
+    if not murderer then return nil end
+    local char = murderer.Character
+    if not char then return nil end
+
+    local hrp = char:FindFirstChild("HumanoidRootPart")
+    if not hrp then return nil end
+
+    local hum    = char:FindFirstChildOfClass("Humanoid")
+    local myChar = lp.Character
+    local myHRP  = myChar and myChar:FindFirstChild("HumanoidRootPart")
+    if not myHRP then return nil end
+
+    local rawVel  = hrp.AssemblyLinearVelocity
+    local smoothV = getSmoothedVel(murderer)
+    local vel     = smoothV * 0.6 + rawVel * 0.4
+
+    local dt = BULLET_DELAY
+
+    local isAir      = hum and hum.FloorMaterial == Enum.Material.Air
+    local isClimbing = hum and hum:GetState() == Enum.HumanoidStateType.Climbing
+    local inAir      = isAir and not isClimbing
+
+    local predX = hrp.Position.X + vel.X * dt
+    local predZ = hrp.Position.Z + vel.Z * dt
+    local predY
+    if inAir then
+        predY = hrp.Position.Y + vel.Y * dt - 0.5 * GRAVITY * dt * dt
+    else
+        predY = hrp.Position.Y
+    end
+    local predHRP = Vector3.new(predX, predY, predZ)
+
     -- Priority: torso first, then head, then HRP, then limbs
     local partNames = {
-        "UpperTorso", "Torso",
+        "Torso", "UpperTorso",
         "Head",
         "HumanoidRootPart",
-        "LeftUpperArm",  "Left Arm",
-        "RightUpperArm", "Right Arm",
-        "LeftUpperLeg",  "Left Leg",
-        "RightUpperLeg", "Right Leg",
+        "Left Arm",  "LeftUpperArm",
+        "Right Arm", "RightUpperArm",
+        "Left Leg",  "LeftUpperLeg",
+        "Right Leg", "RightUpperLeg",
     }
 
     rayParams.FilterDescendantsInstances = { myChar, char }
