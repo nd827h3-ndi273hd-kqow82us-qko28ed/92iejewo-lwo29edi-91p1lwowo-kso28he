@@ -705,9 +705,9 @@ local function getAimPosition()
 
     local hUnit  = hVel.Magnitude > 0 and hVel.Unit or Vector3.zero
     local lead
-    if speed >= 15.87 then
+    if speed >= 15.8 then
         lead = LEAD_FAST
-    elseif speed >= 9 then
+    elseif speed >= 11 then
         lead = LEAD_SLOW
     elseif speed > 0 then
         lead = LEAD_THROW
