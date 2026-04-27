@@ -3,7 +3,7 @@ print("V2.283.0")
 if _G.__MurderHUD_Running then return end
 _G.__MurderHUD_Running = true
 
-local BULLET_DELAY    = 0.32
+local BULLET_DELAY    = 0.3
 local VEL_SMOOTH_SIZE  = 4
 local SPAM_JUMP_VEL    = 35
 local FAKEBOMB_Y_OFFSET = 2.7
