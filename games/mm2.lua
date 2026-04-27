@@ -25,6 +25,7 @@ local roles             = {}
 local stickyRoles       = {}
 local visuals           = {}
 local lpVisuals         = {}
+local playersInRound    = {}
 local murderer          = nil
 local isLpMurd          = false
 local isLpSheriff = false
@@ -276,6 +277,7 @@ end
 local function endRound()
     if not roundActive then return end
     roundActive = false
+    playersInRound = {}
     if murderGui then murderGui.Enabled = false end
     if innocentGui then innocentGui.Enabled = false end
     gunDropped = false
@@ -303,6 +305,10 @@ local function startRound()
     endRound()
     gunDropped       = false
     roundActive      = true
+    playersInRound = {}
+    for _, p in ipairs(Players:GetPlayers()) do
+        playersInRound[p] = true
+    end
 end
 
 -- ── Apply role state for a player ─────────────────────────────────────────────
@@ -320,7 +326,7 @@ local function applyRole(p)
         murderer = nil
     end
     if role and pChar then
-        if isInLobby(pChar) then
+        if isInLobby(pChar) and not playersInRound[p] then
             removeVisuals(p)
             removeLpVisual(p)
         else
@@ -387,6 +393,7 @@ local function watchChar(p, char)
     local hum = char:FindFirstChildOfClass("Humanoid")
     if hum then
         hum.Died:Connect(function()
+            playersInRound[p] = nil
             removeLpVisual(p)
             removeVisuals(p)
             if murderer == p then
@@ -406,14 +413,15 @@ local function watchChar(p, char)
     end
     char.AncestryChanged:Connect(function(_, parent)
         if parent ~= nil then
-            if isInLobby(char) then
+            if isInLobby(char) and not playersInRound[p] then
                 removeLpVisual(p)
                 removeVisuals(p)
             end
             return
         end
-        roles[p]       = nil
-        stickyRoles[p] = nil
+        playersInRound[p] = nil
+        roles[p]          = nil
+        stickyRoles[p]    = nil
         if murderer == p then
             murderer = nil
             endRound()
@@ -576,6 +584,7 @@ Players.PlayerAdded:Connect(function(p)
 end)
 
 Players.PlayerRemoving:Connect(function(p)
+    playersInRound[p] = nil
     roles[p]       = nil
     stickyRoles[p] = nil
     velSmooth[p] = nil
