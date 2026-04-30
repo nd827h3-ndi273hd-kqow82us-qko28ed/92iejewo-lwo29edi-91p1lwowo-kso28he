@@ -1,5 +1,5 @@
 -- LocalScript: StarterPlayerScripts
-print("V2.463.23 - Fixed doesn't work on pc and added pc hotkeys G for Grabgun RightMouse for knife throw")
+print("V2.473.43 - Fixed doesn't work on pc and added pc hotkeys G for Grabgun RightMouse for knife throw")
 if _G.__MurderHUD_Running then return end
 _G.__MurderHUD_Running = true
 
@@ -188,6 +188,20 @@ local function attachLpVisual(p, char, color)
         txt.TextStrokeTransparency = 0.5
         txt.TextColor3             = color
         lpVisuals[p] = { bb = bb, color = color }
+        bb.AncestryChanged:Connect(function(_, parent)
+            if parent ~= nil then return end
+            if lpVisuals[p] and lpVisuals[p].bb == bb then
+                lpVisuals[p] = nil
+                task.defer(function()
+                    local pChar = p.Character
+                    if not pChar or not isLpMurd then return end
+                    local role = roles[p]
+                    if role == "murder" then return end
+                    local lpColor = role == "sheriff" and LP_COLOR.sheriff or LP_COLOR.norole
+                    attachLpVisual(p, pChar, lpColor)
+                end)
+            end
+        end)
     end)
     if not ok then warn("[MurderHUD] LpVisual: " .. tostring(err)) end
 end
@@ -230,6 +244,17 @@ local function attachVisuals(p, char, role)
         txt.TextStrokeTransparency = 0.5
         txt.TextColor3             = color
         visuals[p] = { bb = bb }
+        bb.AncestryChanged:Connect(function(_, parent)
+            if parent ~= nil then return end
+            if visuals[p] and visuals[p].bb == bb then
+                visuals[p] = nil
+                task.defer(function()
+                    local pChar = p.Character
+                    local role = roles[p]
+                    if pChar and role then attachVisuals(p, pChar, role) end
+                end)
+            end
+        end)
     end)
     if not ok then warn("[MurderHUD] RoleVisual: " .. tostring(err)) end
 end
@@ -397,15 +422,16 @@ local function watchChar(p, char)
             if murderer == p then
                 murderer = nil
                 gunDropped = false
-                for _, pl in ipairs(Players:GetPlayers()) do
-                    if pl ~= lp then
-                        task.wait(6)
-                        stickyRoles[pl] = nil
-                        applyRole(pl)
-                        updateLpVisualFor(pl)
+                endRound()
+                task.delay(6, function()
+                    for _, pl in ipairs(Players:GetPlayers()) do
+                        if pl ~= lp then
+                            stickyRoles[pl] = nil
+                            applyRole(pl)
+                            updateLpVisualFor(pl)
+                        end
                     end
-                end
-                endRound()     
+                end)
             end
         end)
     end
@@ -429,7 +455,7 @@ local function watchChar(p, char)
     end)
 end
 
--- ── FakeHRP helpers ───────────────────────────────────────────────────────────
+-- ── FakeHRP helpers ────────────────────────────────────────────────────────
 local function rebuildCharParts(p)
     local char = p.Character
     if not char then charParts[p] = nil return end
