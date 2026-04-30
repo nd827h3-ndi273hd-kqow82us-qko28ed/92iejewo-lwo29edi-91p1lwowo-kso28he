@@ -63,7 +63,7 @@ local rayParams      = RaycastParams.new()
 rayParams.FilterType = Enum.RaycastFilterType.Exclude
 
 local HIDE_POS2 = Vector3.new(0, -9999, 0)
-local REAL_HRP_SIZE = Vector3.new(15, 5, 15)
+local REAL_HRP_SIZE = Vector3.new(14, 4, 14)
 local FAKE_HRP_SIZE = Vector3.new(2, 2, 1)
 
 local fakeHRPs  = {}
@@ -131,17 +131,17 @@ local function setJumpPower(char)
     local hum = char:FindFirstChildOfClass("Humanoid")
     if hum then
         hum.UseJumpPower = true
-        hum.JumpPower = 56
+        hum.JumpPower = 55
         hum:GetPropertyChangedSignal("JumpPower"):Connect(function()
-            if hum.JumpPower ~= 56 then hum.JumpPower = 56 end
+            if hum.JumpPower ~= 55 then hum.JumpPower = 55 end
         end)
     else
         char.ChildAdded:Connect(function(child)
             if child:IsA("Humanoid") then
                 child.UseJumpPower = true
-                child.JumpPower = 56
+                child.JumpPower = 55
                 child:GetPropertyChangedSignal("JumpPower"):Connect(function()
-                    if child.JumpPower ~= 56 then child.JumpPower = 56 end
+                    if child.JumpPower ~= 55 then child.JumpPower = 55 end
                 end)
             end
         end)
@@ -305,7 +305,7 @@ local function endRound()
     if innocentGui then innocentGui.Enabled = false end
     gunDropped = false
     murderer = nil
-    task.delay(9, function()
+    task.delay(15, function()
         for p in pairs(visuals) do removeVisuals(p) end
         for p in pairs(lpVisuals) do removeLpVisual(p) end
         roles = {}
@@ -423,7 +423,7 @@ local function watchChar(p, char)
                 murderer = nil
                 gunDropped = false
                 endRound()
-                task.delay(6, function()
+                task.delay(15, function()
                     for _, pl in ipairs(Players:GetPlayers()) do
                         if pl ~= lp then
                             stickyRoles[pl] = nil
