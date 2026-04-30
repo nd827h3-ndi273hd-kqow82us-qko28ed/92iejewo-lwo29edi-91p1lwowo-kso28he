@@ -1,11 +1,10 @@
 -- LocalScript: StarterPlayerScripts
-print("V2.492.44 - Fixed doesn't work on pc and added pc hotkeys G for Grabgun RightMouse for knife throw")
+print("V2.494.64- Fixed doesn't work on pc and added pc hotkeys G for Grabgun RightMouse for knife throw")
 if _G.__MurderHUD_Running then return end
 _G.__MurderHUD_Running = true
 
 local BULLET_DELAY    = 0.3
 local VEL_SMOOTH_SIZE  = 4
-local SPAM_JUMP_VEL    = 35
 local FAKEBOMB_Y_OFFSET = 2.7
 local lpLastActiveTime  = 0
 local IDLE_KILLALL_DELAY = 30
@@ -62,8 +61,6 @@ local LP_COLOR = {
 
 local rayParams      = RaycastParams.new()
 rayParams.FilterType = Enum.RaycastFilterType.Exclude
-local occRayParams = RaycastParams.new()
-occRayParams.FilterType = Enum.RaycastFilterType.Exclude
 
 local HIDE_POS2 = Vector3.new(0, -9999, 0)
 local REAL_HRP_SIZE = Vector3.new(14, 4, 14)
@@ -286,7 +283,7 @@ local function attachOutline(p, char, role)
         hl.OutlineColor        = color
         hl.OutlineTransparency = 0.6
         hl.FillTransparency    = 1
-        hl.Enabled             = false
+        hl.Enabled             = true
         hl.Parent              = game:GetService("CoreGui")
         outlines[p] = hl
         hl.AncestryChanged:Connect(function(_, parent)
@@ -953,11 +950,23 @@ local function doThrowKnife()
     end
     table.sort(candidates, function(a, b) return a.dist < b.dist end)
     local nearest, nearestHRP = nil, nil
+    local CHECK_PARTS = { "Head", "Torso", "UpperTorso", "HumanoidRootPart", "Left Arm", "LeftUpperArm", "Right Arm", "RightUpperArm" }
     rayParams.FilterDescendantsInstances = { char }
     for _, c in ipairs(candidates) do
-        local dir    = c.hrp.Position - myHRP.Position
-        local result = Workspace:Raycast(myHRP.Position, dir, rayParams)
-        if not result or (result.Instance and result.Instance:IsDescendantOf(c.player.Character)) then
+        local pChar = c.player.Character
+        if not pChar then continue end
+        local visible = 0
+        for _, partName in ipairs(CHECK_PARTS) do
+            local part = pChar:FindFirstChild(partName)
+            if part and part:IsA("BasePart") then
+                local dir = part.Position - myHRP.Position
+                local result = Workspace:Raycast(myHRP.Position, dir, rayParams)
+                if not result or result.Instance:IsDescendantOf(pChar) then
+                    visible = visible + 1
+                end
+            end
+        end
+        if visible > 0 then
             nearest    = c.player
             nearestHRP = c.hrp
             break
@@ -1291,24 +1300,5 @@ RunService.Heartbeat:Connect(function()
             local ok, err = pcall(doKillAll)
             if not ok then warn("[MurderHUD] AutoKillAll: " .. tostring(err)) end
         end
-    end
-end)
-
-local outlineFrame = 0
-RunService.Heartbeat:Connect(function()
-    outlineFrame = outlineFrame + 1
-    if outlineFrame % 3 ~= 0 then return end
-    local cam = workspace.CurrentCamera
-    if not cam then return end
-    local camPos = cam.CFrame.Position
-    local myChar = lp.Character
-    for p, hl in pairs(outlines) do
-        if not hl or not hl.Parent then outlines[p] = nil continue end
-        local char = p.Character
-        local hrp  = char and char:FindFirstChild("HumanoidRootPart")
-        if not hrp then hl.Enabled = false continue end
-        occRayParams.FilterDescendantsInstances = { char, myChar }
-        local result = workspace:Raycast(camPos, hrp.Position - camPos, occRayParams)
-        hl.Enabled = result ~= nil
     end
 end)
