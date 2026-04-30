@@ -32,6 +32,7 @@ local gunDropped      = false
 local roundActive       = false
 local murderGui = nil
 local innocentGui = nil
+local roundId = 0
 local function isInLobby(char)
     if not char then return false end
     local hrp = char:FindFirstChild("HumanoidRootPart")
@@ -351,7 +352,9 @@ local function endRound()
     if innocentGui then innocentGui.Enabled = false end
     gunDropped = false
     murderer = nil
+    local thisId = roundId
     task.delay(15, function()
+        if roundId ~= thisId then return end
         for p in pairs(visuals) do removeVisuals(p) end
         for p in pairs(lpVisuals) do removeLpVisual(p) end
         for p in pairs(outlines) do removeOutline(p) end
@@ -372,6 +375,7 @@ local function checkInnocentsDead()
 end
 
 local function startRound()
+    roundId = roundId + 1
     roundActive = true
     gunDropped  = false
     playersInRound = {}
