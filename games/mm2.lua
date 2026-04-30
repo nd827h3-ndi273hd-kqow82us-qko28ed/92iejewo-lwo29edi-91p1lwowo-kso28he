@@ -1,5 +1,5 @@
 -- LocalScript: StarterPlayerScripts
-print("V2.494.96- Fixed doesn't work on pc and added pc hotkeys G for Grabgun RightMouse for knife throw")
+print("V2.502.12- Fixed doesn't work on pc and added pc hotkeys G for Grabgun RightMouse for knife throw")
 if _G.__MurderHUD_Running then return end
 _G.__MurderHUD_Running = true
 
@@ -294,7 +294,7 @@ local function attachOutline(p, char, role)
                     local pChar = p.Character
                     if pChar and playersInRound[p] then
                         local r = roles[p]
-                        if r and (not isLpMurd or r == "sheriff" or r == "hero") then
+                        if r or isLpMurd then
                             attachOutline(p, pChar, r)
                         end
                     end
@@ -425,7 +425,7 @@ local function applyRole(p)
         removeVisuals(p)
     end
     if pChar and playersInRound[p] then
-        if isInLobby(pChar) or (isLpMurd and role ~= "sheriff" and role ~= "hero") or (not isLpMurd and not role) then
+        if isInLobby(pChar) or (not isLpMurd and not role) then
             removeOutline(p)
         else
             local o = outlines[p]
@@ -457,8 +457,6 @@ local function refreshLpMurd()
             if p ~= lp then
                 applyRole(p)
                 updateLpVisualFor(p)
-                local r = roles[p]
-                if r ~= "sheriff" and r ~= "hero" then removeOutline(p) end
             end
         end
         if innocentGui then innocentGui.Enabled = false end
