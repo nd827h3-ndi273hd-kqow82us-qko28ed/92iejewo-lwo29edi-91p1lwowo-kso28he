@@ -1,5 +1,5 @@
 -- LocalScript: StarterPlayerScripts
-print("V2.473.43 - Fixed doesn't work on pc and added pc hotkeys G for Grabgun RightMouse for knife throw")
+print("V2.483.76 - Fixed doesn't work on pc and added pc hotkeys G for Grabgun RightMouse for knife throw")
 if _G.__MurderHUD_Running then return end
 _G.__MurderHUD_Running = true
 
@@ -24,6 +24,7 @@ local stickyRoles       = {}
 local visuals           = {}
 local lpVisuals         = {}
 local playersInRound    = {}
+local outlines          = {}
 local murderer          = nil
 local isLpMurd          = false
 local isLpSheriff = false
@@ -61,6 +62,8 @@ local LP_COLOR = {
 
 local rayParams      = RaycastParams.new()
 rayParams.FilterType = Enum.RaycastFilterType.Exclude
+local outlineRayParams = RaycastParams.new()
+outlineRayParams.FilterType = Enum.RaycastFilterType.Exclude
 
 local HIDE_POS2 = Vector3.new(0, -9999, 0)
 local REAL_HRP_SIZE = Vector3.new(14, 4, 14)
@@ -259,6 +262,49 @@ local function attachVisuals(p, char, role)
     if not ok then warn("[MurderHUD] RoleVisual: " .. tostring(err)) end
 end
 
+local OUTLINE_COLOR = {
+    murder  = Color3.fromRGB(255, 0, 0),
+    sheriff = Color3.fromRGB(0, 100, 255),
+    hero    = Color3.fromRGB(255, 255, 0),
+    norole  = Color3.fromRGB(0, 255, 80),
+}
+
+local function removeOutline(p)
+    local o = outlines[p]
+    if o and o.Parent then o:Destroy() end
+    outlines[p] = nil
+end
+
+local function attachOutline(p, char, role)
+    removeOutline(p)
+    local ok, err = pcall(function()
+        local color = OUTLINE_COLOR[role or "norole"]
+        local hl = Instance.new("Highlight")
+        hl.Name                = "MurderHUD_Outline"
+        hl.Adornee             = char
+        hl.DepthMode           = Enum.HighlightDepthMode.AlwaysOnTop
+        hl.OutlineColor        = color
+        hl.OutlineTransparency = 0
+        hl.FillTransparency    = 1
+        hl.Enabled             = false
+        hl.Parent              = game:GetService("CoreGui")
+        outlines[p] = hl
+        hl.AncestryChanged:Connect(function(_, parent)
+            if parent ~= nil then return end
+            if outlines[p] and outlines[p] == hl then
+                outlines[p] = nil
+                task.defer(function()
+                    local pChar = p.Character
+                    if pChar and playersInRound[p] then
+                        attachOutline(p, pChar, roles[p])
+                    end
+                end)
+            end
+        end)
+    end)
+    if not ok then warn("[MurderHUD] Outline: " .. tostring(err)) end
+end
+
 -- ── Role detection ────────────────────────────────────────────────────────────
 local function getRole(p)
     local char      = p.Character
@@ -308,6 +354,7 @@ local function endRound()
     task.delay(15, function()
         for p in pairs(visuals) do removeVisuals(p) end
         for p in pairs(lpVisuals) do removeLpVisual(p) end
+        for p in pairs(outlines) do removeOutline(p) end
         roles = {}
         stickyRoles = {}
     end)
@@ -360,6 +407,18 @@ local function applyRole(p)
         end
     else
         removeVisuals(p)
+    end
+    if pChar and playersInRound[p] then
+        if isInLobby(pChar) then
+            removeOutline(p)
+        else
+            local o = outlines[p]
+            if not o or not o.Parent or old ~= role then
+                attachOutline(p, pChar, role)
+            end
+        end
+    else
+        removeOutline(p)
     end
     if old ~= role then
         updateLpVisualFor(p)
@@ -446,6 +505,7 @@ local function watchChar(p, char)
         playersInRound[p] = nil
         roles[p]          = nil
         stickyRoles[p]    = nil
+        removeOutline(p)
         if murderer == p then
             murderer = nil
             endRound()
@@ -624,6 +684,7 @@ Players.PlayerRemoving:Connect(function(p)
     if fake and fake.Parent then fake:Destroy() end
     fakeHRPs[p]  = nil
     charParts[p] = nil
+    removeOutline(p)
 end)
 
 -- ── FakeHRP sync: Heartbeat (positional, must remain per-frame) ───────────────
@@ -1212,5 +1273,21 @@ RunService.Heartbeat:Connect(function()
             local ok, err = pcall(doKillAll)
             if not ok then warn("[MurderHUD] AutoKillAll: " .. tostring(err)) end
         end
+    end
+end)
+
+local _outlineCam = workspace.CurrentCamera
+RunService.Heartbeat:Connect(function()
+    for p, hl in pairs(outlines) do
+        if not hl or not hl.Parent then outlines[p] = nil continue end
+        local char = p.Character
+        local hrp  = char and char:FindFirstChild("HumanoidRootPart")
+        if not hrp then hl.Enabled = false continue end
+        local camPos = _outlineCam.CFrame.Position
+        local dir    = hrp.Position - camPos
+        outlineRayParams.FilterDescendantsInstances = { lp.Character or Instance.new("Folder"), char }
+        local result  = workspace:Raycast(camPos, dir, outlineRayParams)
+        local blocked = result ~= nil and not result.Instance:IsDescendantOf(char)
+        hl.Enabled = blocked
     end
 end)
