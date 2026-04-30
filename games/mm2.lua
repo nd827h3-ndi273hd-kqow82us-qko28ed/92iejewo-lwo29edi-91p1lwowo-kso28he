@@ -62,8 +62,6 @@ local LP_COLOR = {
 
 local rayParams      = RaycastParams.new()
 rayParams.FilterType = Enum.RaycastFilterType.Exclude
-local outlineRayParams = RaycastParams.new()
-outlineRayParams.FilterType = Enum.RaycastFilterType.Exclude
 
 local HIDE_POS2 = Vector3.new(0, -9999, 0)
 local REAL_HRP_SIZE = Vector3.new(14, 4, 14)
@@ -282,11 +280,11 @@ local function attachOutline(p, char, role)
         local hl = Instance.new("Highlight")
         hl.Name                = "MurderHUD_Outline"
         hl.Adornee             = char
-        hl.DepthMode           = Enum.HighlightDepthMode.AlwaysOnTop
+        hl.DepthMode           = Enum.HighlightDepthMode.Occluded
         hl.OutlineColor        = color
-        hl.OutlineTransparency = 0.5
+        hl.OutlineTransparency = 0.6
         hl.FillTransparency    = 1
-        hl.Enabled             = false
+        hl.Enabled             = true
         hl.Parent              = game:GetService("CoreGui")
         outlines[p] = hl
         hl.AncestryChanged:Connect(function(_, parent)
@@ -1276,23 +1274,11 @@ RunService.Heartbeat:Connect(function()
     end
 end)
 
-local _outlineCam = workspace.CurrentCamera
 RunService.Heartbeat:Connect(function()
     for p, hl in pairs(outlines) do
         if not hl or not hl.Parent then outlines[p] = nil continue end
         local char = p.Character
         local hrp  = char and char:FindFirstChild("HumanoidRootPart")
-        if not hrp then hl.Enabled = false continue end
-        local camPos = _outlineCam.CFrame.Position
-        local dir    = hrp.Position - camPos
-        local myChar = lp.Character
-        local fakePart = fakeHRPs[p]
-        local filter = { char }
-        if myChar then filter[#filter+1] = myChar end
-        if fakePart then filter[#filter+1] = fakePart end
-        outlineRayParams.FilterDescendantsInstances = filter
-        local result  = workspace:Raycast(camPos, dir, outlineRayParams)
-        local blocked = result ~= nil and not result.Instance:IsDescendantOf(char)
-        hl.Enabled = blocked
+        hl.Enabled = hrp ~= nil
     end
 end)
