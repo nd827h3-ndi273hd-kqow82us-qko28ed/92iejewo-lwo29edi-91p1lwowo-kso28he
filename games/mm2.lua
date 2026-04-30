@@ -1,5 +1,5 @@
 -- LocalScript: StarterPlayerScripts
-print("V2.492.13 - Fixed doesn't work on pc and added pc hotkeys G for Grabgun RightMouse for knife throw")
+print("V2.492.44 - Fixed doesn't work on pc and added pc hotkeys G for Grabgun RightMouse for knife throw")
 if _G.__MurderHUD_Running then return end
 _G.__MurderHUD_Running = true
 
@@ -62,6 +62,8 @@ local LP_COLOR = {
 
 local rayParams      = RaycastParams.new()
 rayParams.FilterType = Enum.RaycastFilterType.Exclude
+local occRayParams = RaycastParams.new()
+occRayParams.FilterType = Enum.RaycastFilterType.Exclude
 
 local HIDE_POS2 = Vector3.new(0, -9999, 0)
 local REAL_HRP_SIZE = Vector3.new(14, 4, 14)
@@ -268,44 +270,40 @@ local OUTLINE_COLOR = {
 }
 
 local function removeOutline(p)
-    local tbl = outlines[p]
-    if not tbl then return end
-    for _, hl in pairs(tbl) do
-        if hl and hl.Parent then hl:Destroy() end
-    end
+    local hl = outlines[p]
+    if hl and hl.Parent then hl:Destroy() end
     outlines[p] = nil
 end
-
-local occRayParams = RaycastParams.new()
-occRayParams.FilterType = Enum.RaycastFilterType.Exclude
 
 local function attachOutline(p, char, role)
     removeOutline(p)
     local ok, err = pcall(function()
         local color = OUTLINE_COLOR[role or "norole"]
-        local partHighlights = {}
-        local function addPartHL(part)
-            if partHighlights[part] then return end
-            local hl = Instance.new("Highlight")
-            hl.Name                = "MurderHUD_Outline"
-            hl.Adornee             = part
-            hl.DepthMode           = Enum.HighlightDepthMode.AlwaysOnTop
-            hl.OutlineColor        = color
-            hl.OutlineTransparency = 0.6
-            hl.FillTransparency    = 1
-            hl.Enabled             = false
-            hl.Parent              = game:GetService("CoreGui")
-            partHighlights[part]   = hl
-        end
-        for _, part in ipairs(char:GetDescendants()) do
-            if part:IsA("BasePart") then addPartHL(part) end
-        end
-        char.DescendantAdded:Connect(function(v)
-            if v:IsA("BasePart") and outlines[p] == partHighlights then
-                addPartHL(v)
+        local hl = Instance.new("Highlight")
+        hl.Name                = "MurderHUD_Outline"
+        hl.Adornee             = char
+        hl.DepthMode           = Enum.HighlightDepthMode.AlwaysOnTop
+        hl.OutlineColor        = color
+        hl.OutlineTransparency = 0.6
+        hl.FillTransparency    = 1
+        hl.Enabled             = false
+        hl.Parent              = game:GetService("CoreGui")
+        outlines[p] = hl
+        hl.AncestryChanged:Connect(function(_, parent)
+            if parent ~= nil then return end
+            if outlines[p] == hl then
+                outlines[p] = nil
+                task.defer(function()
+                    local pChar = p.Character
+                    if pChar and playersInRound[p] then
+                        local r = roles[p]
+                        if not isLpMurd or r == "sheriff" or r == "hero" then
+                            attachOutline(p, pChar, r)
+                        end
+                    end
+                end)
             end
         end)
-        outlines[p] = partHighlights
     end)
     if not ok then warn("[MurderHUD] Outline: " .. tostring(err)) end
 end
@@ -414,7 +412,7 @@ local function applyRole(p)
         removeVisuals(p)
     end
     if pChar and playersInRound[p] then
-        if isInLobby(pChar) then
+        if isInLobby(pChar) or (isLpMurd and role ~= "sheriff" and role ~= "hero") then
             removeOutline(p)
         else
             local o = outlines[p]
@@ -446,11 +444,18 @@ local function refreshLpMurd()
             if p ~= lp then
                 applyRole(p)
                 updateLpVisualFor(p)
+                local r = roles[p]
+                if r ~= "sheriff" and r ~= "hero" then removeOutline(p) end
             end
         end
         if innocentGui then innocentGui.Enabled = false end
     else
         clearAllLpVisuals()
+        for _, p in ipairs(Players:GetPlayers()) do
+            if p ~= lp and p.Character and playersInRound[p] then
+                attachOutline(p, p.Character, roles[p])
+            end
+        end
     end
     local lpInLobby = isInLobby(lp.Character)
     if murderGui then murderGui.Enabled = isLpMurd and not lpInLobby end
@@ -467,10 +472,14 @@ local function watchContainer(p, container, forLp)
         end)
     else
         container.ChildAdded:Connect(function(child)
-            if child.Name == "Knife" or child.Name == "Gun" then applyRole(p) end
+            if child.Name == "Knife" or child.Name == "Gun" then
+                task.defer(function() applyRole(p) end)
+            end
         end)
         container.ChildRemoved:Connect(function(child)
-            if child.Name == "Knife" or child.Name == "Gun" then applyRole(p) end
+            if child.Name == "Knife" or child.Name == "Gun" then
+                task.defer(function() applyRole(p) end)
+            end
         end)
     end
 end
@@ -1203,12 +1212,16 @@ end)
 Workspace.DescendantAdded:Connect(function(desc)
     if desc.Name ~= "GunDrop" then return end
     gunDropped = true
+    task.defer(function()
+        for _, p in ipairs(Players:GetPlayers()) do
+            if p ~= lp then applyRole(p) end
+        end
+    end)
     local lpInLobby = isInLobby(lp.Character)
     if innocentGui then innocentGui.Enabled = not isLpMurd and not lpInLobby end
     local ok, err = pcall(attachGunDropHighlight, desc)
     if not ok then warn("[MurderHUD] GunDrop DescendantAdded: " .. tostring(err)) end
 end)
-
 -- Catch any drops already in workspace at startup
 for _, desc in ipairs(Workspace:GetDescendants()) do
     if desc.Name == "GunDrop" then
@@ -1281,50 +1294,21 @@ RunService.Heartbeat:Connect(function()
     end
 end)
 
-local outlineFrameCount = 0
+local outlineFrame = 0
 RunService.Heartbeat:Connect(function()
-    outlineFrameCount = outlineFrameCount + 1
-    if outlineFrameCount % 3 ~= 0 then return end
-
+    outlineFrame = outlineFrame + 1
+    if outlineFrame % 3 ~= 0 then return end
     local cam = workspace.CurrentCamera
     if not cam then return end
     local camPos = cam.CFrame.Position
     local myChar = lp.Character
-
-    for p, partHighlights in pairs(outlines) do
+    for p, hl in pairs(outlines) do
+        if not hl or not hl.Parent then outlines[p] = nil continue end
         local char = p.Character
         local hrp  = char and char:FindFirstChild("HumanoidRootPart")
-        if not hrp then
-            for _, hl in pairs(partHighlights) do
-                if hl and hl.Parent then hl.Enabled = false end
-            end
-            continue
-        end
-
+        if not hrp then hl.Enabled = false continue end
         occRayParams.FilterDescendantsInstances = { char, myChar }
-
-        local hrpDir    = hrp.Position - camPos
-        local hrpResult = workspace:Raycast(camPos, hrpDir, occRayParams)
-        if not hrpResult then
-            for _, hl in pairs(partHighlights) do
-                if hl and hl.Parent then hl.Enabled = false end
-            end
-            continue
-        end
-
-        for part, hl in pairs(partHighlights) do
-            if not hl or not hl.Parent then
-                partHighlights[part] = nil
-                continue
-            end
-            if not part or not part.Parent then
-                if hl and hl.Parent then hl:Destroy() end
-                partHighlights[part] = nil
-                continue
-            end
-            local dir    = part.Position - camPos
-            local result = workspace:Raycast(camPos, dir, occRayParams)
-            hl.Enabled   = result ~= nil
-        end
+        local result = workspace:Raycast(camPos, hrp.Position - camPos, occRayParams)
+        hl.Enabled = result ~= nil
     end
 end)
