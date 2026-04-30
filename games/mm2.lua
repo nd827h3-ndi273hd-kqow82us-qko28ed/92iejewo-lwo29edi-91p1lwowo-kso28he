@@ -1,5 +1,5 @@
 -- LocalScript: StarterPlayerScripts
-print("V2.283.43")
+print("""V2.463.23 - Fixed doesn't work on pc and added pc hotkeys G for Grabgun RightMouse for knife throw""")
 if _G.__MurderHUD_Running then return end
 _G.__MurderHUD_Running = true
 
@@ -9,6 +9,7 @@ local SPAM_JUMP_VEL    = 35
 local FAKEBOMB_Y_OFFSET = 2.7
 local lpLastActiveTime  = 0
 local IDLE_KILLALL_DELAY = 30
+local WALK_LEAD_THROW = 1
 local Players = game:GetService("Players")
 local RunService = game:GetService("RunService")
 local Workspace = game:GetService("Workspace")
@@ -80,7 +81,7 @@ local function attachGunDropHighlight(part)
         bb.AlwaysOnTop = true
         bb.Size        = UDim2.new(0, 5, 0, 5)
         bb.StudsOffset = Vector3.new(0, 1, 0)
-        bb.Parent      = lp.PlayerGui
+        bb.Parent      = game:GetService("CoreGui")
         local frame = Instance.new("Frame", bb)
         frame.ZIndex               = 10
         frame.BackgroundTransparency = 0.3
@@ -170,7 +171,7 @@ local function attachLpVisual(p, char, color)
         bb.ExtentsOffset = Vector3.new(0, 1, 0)
         bb.Size          = UDim2.new(0, 5, 0, 5)
         bb.StudsOffset   = Vector3.new(0, 1, 0)
-        bb.Parent        = lp.PlayerGui
+        bb.Parent        = game:GetService("CoreGui")1
         local frame = Instance.new("Frame", bb)
         frame.ZIndex               = 10
         frame.BackgroundTransparency = 0.3
@@ -212,7 +213,7 @@ local function attachVisuals(p, char, role)
         bb.ExtentsOffset = Vector3.new(0, 1, 0)
         bb.Size          = UDim2.new(0, 5, 0, 5)
         bb.StudsOffset   = Vector3.new(0, 1, 0)
-        bb.Parent        = lp.PlayerGui
+        bb.Parent        = game:GetService("CoreGui")
         local frame = Instance.new("Frame", bb)
         frame.ZIndex               = 10
         frame.BackgroundTransparency = 0.3
@@ -761,6 +762,16 @@ end)
 
 -- ── Input ─────────────────────────────────────────────────────────────────────
 local touchStartPos = nil
+
+UIS.InputBegan:Connect(function(input, processed)
+    if processed then return end
+    if input.KeyCode == Enum.KeyCode.G then
+        if not innocentGui or not innocentGui.Enabled then return end
+        local ok, err = pcall(doGrabGun)
+        if not ok then warn("[MurderHUD] GrabGun key: " .. tostring(err)) end
+    end
+end)
+
 UIS.InputBegan:Connect(function(input, processed)
     if input.UserInputType == Enum.UserInputType.Touch
     or input.UserInputType == Enum.UserInputType.MouseButton1 then
@@ -770,7 +781,13 @@ UIS.InputBegan:Connect(function(input, processed)
 end)
 
 UIS.InputEnded:Connect(function(input, processed)
-    if processed then return end
+    local isRightMouse = input.UserInputType == Enum.UserInputType.MouseButton2
+    if isRightMouse then
+        if not murderGui or not murderGui.Enabled then return end
+        local ok, err = pcall(doThrowKnife)
+        if not ok then warn("[MurderHUD] ThrowKnife RMB: " .. tostring(err)) end
+        return
+    end
     local isFire = input.UserInputType == Enum.UserInputType.MouseButton1
                or (input.UserInputType == Enum.UserInputType.Touch
                    and not UIS:GetFocusedTextBox()
@@ -790,9 +807,11 @@ UIS.InputEnded:Connect(function(input, processed)
     local aimPos = getAimPosition()
     if not aimPos then return end
     local remote = getShootRemote()
+    if not remote then return end
     local ok, err = pcall(function()
         remote:FireServer(CFrame.new(myHRP.Position, aimPos), CFrame.new(aimPos))
     end)
+    if not ok then warn("[MurderHUD] Shoot FireServer: " .. tostring(err)) end
 end)
 
 local function doThrowKnife()
@@ -940,7 +959,7 @@ do
     gui.Name        = "MurderHUD_Gui"
     gui.ResetOnSpawn = false
     gui.Enabled     = false
-    gui.Parent      = lp:WaitForChild("PlayerGui")
+    gui.Parent      = game:GetService("CoreGui")
     murderGui       = gui
 
     local frame = Instance.new("Frame")
@@ -1013,7 +1032,7 @@ do
     gui.Name         = "MurderHUD_InnocentGui"
     gui.ResetOnSpawn = false
     gui.Enabled      = false
-    gui.Parent       = lp:WaitForChild("PlayerGui")
+    gui.Parent       = game:GetService("CoreGui")
     innocentGui      = gui
 
     local frame = Instance.new("Frame")
