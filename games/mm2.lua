@@ -1,5 +1,5 @@
 -- LocalScript: StarterPlayerScripts
-print("V2.494.82- Fixed doesn't work on pc and added pc hotkeys G for Grabgun RightMouse for knife throw")
+print("V2.494.96- Fixed doesn't work on pc and added pc hotkeys G for Grabgun RightMouse for knife throw")
 if _G.__MurderHUD_Running then return end
 _G.__MurderHUD_Running = true
 
@@ -374,7 +374,6 @@ end
 local function startRound()
     roundActive = true
     gunDropped  = false
-    murderer    = nil
     playersInRound = {}
     if murderGui then murderGui.Enabled = false end
     if innocentGui then innocentGui.Enabled = false end
