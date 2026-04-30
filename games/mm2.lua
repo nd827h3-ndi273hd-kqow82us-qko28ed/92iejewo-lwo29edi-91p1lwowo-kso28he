@@ -372,13 +372,30 @@ local function checkInnocentsDead()
 end
 
 local function startRound()
-    endRound()
-    gunDropped       = false
-    roundActive      = true
+    roundActive = true
+    gunDropped  = false
+    murderer    = nil
     playersInRound = {}
+    if murderGui then murderGui.Enabled = false end
+    if innocentGui then innocentGui.Enabled = false end
     for _, p in ipairs(Players:GetPlayers()) do
         playersInRound[p] = true
     end
+    for _, p in ipairs(Players:GetPlayers()) do
+        if p ~= lp then applyRole(p) end
+    end
+    task.delay(1, function()
+        if not roundActive then return end
+        for _, p in ipairs(Players:GetPlayers()) do
+            if p ~= lp then applyRole(p) end
+        end
+    end)
+    task.delay(3, function()
+        if not roundActive then return end
+        for _, p in ipairs(Players:GetPlayers()) do
+            if p ~= lp then applyRole(p) end
+        end
+    end)
 end
 
 -- ── Apply role state for a player ─────────────────────────────────────────────
