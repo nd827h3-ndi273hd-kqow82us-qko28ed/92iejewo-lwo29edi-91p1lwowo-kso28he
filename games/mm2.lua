@@ -1,5 +1,5 @@
 -- LocalScript: StarterPlayerScripts
-print("""V2.463.23 - Fixed doesn't work on pc and added pc hotkeys G for Grabgun RightMouse for knife throw""")
+print("V2.463.23 - Fixed doesn't work on pc and added pc hotkeys G for Grabgun RightMouse for knife throw")
 if _G.__MurderHUD_Running then return end
 _G.__MurderHUD_Running = true
 
@@ -171,7 +171,7 @@ local function attachLpVisual(p, char, color)
         bb.ExtentsOffset = Vector3.new(0, 1, 0)
         bb.Size          = UDim2.new(0, 5, 0, 5)
         bb.StudsOffset   = Vector3.new(0, 1, 0)
-        bb.Parent        = game:GetService("CoreGui")1
+        bb.Parent        = game:GetService("CoreGui")
         local frame = Instance.new("Frame", bb)
         frame.ZIndex               = 10
         frame.BackgroundTransparency = 0.3
