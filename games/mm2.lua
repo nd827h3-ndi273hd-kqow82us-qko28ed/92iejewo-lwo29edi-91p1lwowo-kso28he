@@ -1,5 +1,5 @@
 -- LocalScript: StarterPlayerScripts
-print("V2.483.76 - Fixed doesn't work on pc and added pc hotkeys G for Grabgun RightMouse for knife throw")
+print("V2.489.32 - Fixed doesn't work on pc and added pc hotkeys G for Grabgun RightMouse for knife throw")
 if _G.__MurderHUD_Running then return end
 _G.__MurderHUD_Running = true
 
@@ -284,7 +284,7 @@ local function attachOutline(p, char, role)
         hl.Adornee             = char
         hl.DepthMode           = Enum.HighlightDepthMode.AlwaysOnTop
         hl.OutlineColor        = color
-        hl.OutlineTransparency = 0
+        hl.OutlineTransparency = 0.5
         hl.FillTransparency    = 1
         hl.Enabled             = false
         hl.Parent              = game:GetService("CoreGui")
@@ -1285,7 +1285,12 @@ RunService.Heartbeat:Connect(function()
         if not hrp then hl.Enabled = false continue end
         local camPos = _outlineCam.CFrame.Position
         local dir    = hrp.Position - camPos
-        outlineRayParams.FilterDescendantsInstances = { lp.Character or Instance.new("Folder"), char }
+        local myChar = lp.Character
+        local fakePart = fakeHRPs[p]
+        local filter = { char }
+        if myChar then filter[#filter+1] = myChar end
+        if fakePart then filter[#filter+1] = fakePart end
+        outlineRayParams.FilterDescendantsInstances = filter
         local result  = workspace:Raycast(camPos, dir, outlineRayParams)
         local blocked = result ~= nil and not result.Instance:IsDescendantOf(char)
         hl.Enabled = blocked
