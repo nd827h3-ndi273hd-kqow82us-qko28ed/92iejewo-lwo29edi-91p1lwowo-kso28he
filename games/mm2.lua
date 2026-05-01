@@ -814,8 +814,8 @@ local function getAimPosition()
 
     local LEAD_FAST  = 4.6
     local LEAD_SLOW  = 1.4
-    local LEAD_SSLOW  = 0.4
-    local LEAD_VSLOW = 0.1
+    local LEAD_SSLOW  = 0.6
+    local LEAD_VSLOW = 0.2
 
     local hUnit = hVel.Magnitude > 0 and hVel.Unit or Vector3.zero
     local lead
