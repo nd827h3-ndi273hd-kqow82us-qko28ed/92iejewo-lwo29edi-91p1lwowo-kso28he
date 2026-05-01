@@ -1,5 +1,5 @@
 -- LocalScript: StarterPlayerScripts
-print("V2.102.216 - Fixed doesn't work on pc and added pc hotkeys G for Grabgun RightMouse for knife throw")
+print("V2.102.220 - Fixed doesn't work on pc and added pc hotkeys G for Grabgun RightMouse for knife throw")
 if _G.__MurderHUD_Running then return end
 _G.__MurderHUD_Running = true
 
