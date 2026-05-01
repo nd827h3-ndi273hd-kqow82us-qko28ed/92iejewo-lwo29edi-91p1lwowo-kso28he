@@ -1137,8 +1137,13 @@ local function doFling(name)
     local ok, err = pcall(function()
         local saved = myHRP.CFrame
         flingActive = true
-        myHRP.CFrame = tHRP.CFrame
-        task.wait(1)
+        local conn = RunService.Heartbeat:Connect(function()
+            local tc = target.Character
+            local th = tc and tc:FindFirstChild("HumanoidRootPart")
+            if th then myHRP.CFrame = th.CFrame end
+        end)
+        task.wait(2)
+        conn:Disconnect()
         flingActive = false
         myHRP.CFrame = saved
     end)
@@ -1600,21 +1605,24 @@ RunService.Heartbeat:Connect(function()
 end)
 
 task.spawn(function()
+    local movel = 0.1
     while true do
         RunService.Heartbeat:Wait()
         if flingActive then
             local c = lp.Character
             local hrp = c and c:FindFirstChild("HumanoidRootPart")
-            if hrp then
+            if c and c.Parent and hrp and hrp.Parent then
                 local vel = hrp.Velocity
-                hrp.Velocity = vel + Vector3.new(
-                    math.random(-1e9, 1e9),
-                    math.random(5e8,  1e9),
-                    math.random(-1e9, 1e9)
-                )
+                hrp.Velocity = vel * 10000 + Vector3.new(0, 10000, 0)
                 RunService.RenderStepped:Wait()
-                if hrp.Parent then hrp.Velocity = vel end
-                task.wait(1e-4)
+                if c and c.Parent and hrp and hrp.Parent then
+                    hrp.Velocity = vel
+                end
+                RunService.Stepped:Wait()
+                if c and c.Parent and hrp and hrp.Parent then
+                    hrp.Velocity = vel + Vector3.new(0, movel, 0)
+                    movel = movel * -1
+                end
             end
         end
     end
