@@ -1600,7 +1600,6 @@ RunService.Heartbeat:Connect(function()
 end)
 
 task.spawn(function()
-    local movel = 0.1
     while true do
         RunService.Heartbeat:Wait()
         if flingActive then
@@ -1608,14 +1607,14 @@ task.spawn(function()
             local hrp = c and c:FindFirstChild("HumanoidRootPart")
             if hrp then
                 local vel = hrp.Velocity
-                hrp.Velocity = vel * 55000 + Vector3.new(0, 55000, 0)
+                hrp.Velocity = vel + Vector3.new(
+                    math.random(-1e9, 1e9),
+                    math.random(5e8,  1e9),
+                    math.random(-1e9, 1e9)
+                )
                 RunService.RenderStepped:Wait()
                 if hrp.Parent then hrp.Velocity = vel end
-                RunService.Stepped:Wait()
-                if hrp.Parent then
-                    hrp.Velocity = vel + Vector3.new(0, movel, 0)
-                    movel = movel * -1
-                end
+                task.wait(1e-4)
             end
         end
     end
