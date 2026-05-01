@@ -1,5 +1,5 @@
 -- LocalScript: StarterPlayerScripts
-print("V2.102.220 - Fixed doesn't work on pc and added pc hotkeys G for Grabgun RightMouse for knife throw")
+print("V2.102.224 - Fixed doesn't work on pc and added pc hotkeys G for Grabgun RightMouse for knife throw")
 if _G.__MurderHUD_Running then return end
 _G.__MurderHUD_Running = true
 
@@ -652,7 +652,7 @@ local function refreshLpSheriff()
                or (bp   and bp:FindFirstChild("Gun")   ~= nil)
     if prev == isLpSheriff then return end
     local lpInLobby = isInLobby(lp.Character)
-    if innocentGui then innocentGui.Enabled = not lpInLobby and not isLpMurd and not isLpSheriff and innocentGui.Enabled end
+    if innocentGui then innocentGui.Enabled = not lpInLobby and not isLpMurd and not isLpSheriff and gunDropped end
     if murderGui and lpInLobby then murderGui.Enabled = false end
 end
 
@@ -826,7 +826,7 @@ local function getAimPosition()
     elseif speed > 8 then
         lead = LEAD_SSLOW
     elseif speed > 4 then
-        lead = LEAD_IDLE
+        lead = LEAD_VSLOW
     else
         lead = 0
     end
@@ -874,6 +874,7 @@ local function getAimPosition()
         end
     end
 
+    print(speed)
     return candidates[1]
 end
 
@@ -932,7 +933,7 @@ end)
 
 -- ── Input ─────────────────────────────────────────────────────────────────────
 local doThrowKnife
-local doGrabGun2
+local doGrabGun
 local touchStartPos = nil
 
 UIS.InputBegan:Connect(function(input, processed)
@@ -1338,7 +1339,7 @@ task.spawn(function()
     end)
     lp.CharacterAdded:Connect(function(char)
         char.AncestryChanged:Connect(function(_, parent)
-            local inLobby = isInLobby(Char)
+            local inLobby = isInLobby(char)
             if murderGui then murderGui.Enabled = not inLobby and isLpMurd end
             if innocentGui then innocentGui.Enabled = not inLobby and (gunDropped and not isLpMurd and not isLpSheriff) end
         end)
