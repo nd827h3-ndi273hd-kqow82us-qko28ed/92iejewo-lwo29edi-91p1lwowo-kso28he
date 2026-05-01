@@ -1,5 +1,5 @@
 -- LocalScript: StarterPlayerScripts
-print("V2.102.226")
+print("V2.102.227")
 if _G.__MurderHUD_Running then return end
 _G.__MurderHUD_Running = true
 
@@ -812,7 +812,7 @@ local function getAimPosition()
     end
 
     local LEAD_FAST  = 4.6
-    local LEAD_SLOW  = 2.5
+    local LEAD_SLOW  = 2.6
     local LEAD_SSLOW  = 1.7
     local LEAD_VSLOW = 1
 
@@ -925,7 +925,6 @@ UIS.InputEnded:Connect(function(input, processed)
                    and not UIS:GetFocusedTextBox()
                    and input.Position.X > (workspace.CurrentCamera.ViewportSize.X * 0.35))
     if not isFire then return end
-    task.wait(0.1)
     if touchStartPos then
         local delta = (Vector2.new(input.Position.X, input.Position.Y) - Vector2.new(touchStartPos.X, touchStartPos.Y)).Magnitude
         if delta > 12 then touchStartPos = nil return end
