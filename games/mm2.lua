@@ -1,5 +1,5 @@
 -- LocalScript: StarterPlayerScripts
-print("V2.102.227")
+print("V2.105.228")
 if _G.__MurderHUD_Running then return end
 _G.__MurderHUD_Running = true
 
@@ -32,6 +32,7 @@ local gunDropped      = false
 local roundActive       = false
 local murderGui = nil
 local innocentGui = nil
+local helpGui = nil
 local roundId = 0
 local function isInLobby(char)
     if not char then return false end
@@ -1051,29 +1052,65 @@ local function doKillAll()
     end
     local myHRP = char:FindFirstChild("HumanoidRootPart")
     if not myHRP then return end
-    local hrpList = {}
     for _, p in ipairs(Players:GetPlayers()) do
         if p ~= lp and p.Character then
             local hrp = p.Character:FindFirstChild("HumanoidRootPart")
             if hrp then
                 local ok3, err3 = pcall(function()
-                    hrp.Anchored = true
                     hrp.CFrame = myHRP.CFrame + myHRP.CFrame.LookVector * 1
                 end)
-                if ok3 then table.insert(hrpList, hrp)
-                else warn("[MurderHUD] KillAll anchor: " .. tostring(err3)) end
+                if not ok3 then warn("[MurderHUD] KillAll move: " .. tostring(err3)) end
             end
         end
     end
     local ok4, err4 = pcall(function() stab:FireServer() end)
     if not ok4 then warn("[MurderHUD] KillAll FireServer: " .. tostring(err4)) end
-    task.delay(2, function()
-        for _, hrp in ipairs(hrpList) do
-            pcall(function()
-                if hrp and hrp.Parent then hrp.Anchored = false end
-            end)
+end
+
+local function doKillSingle(name)
+    local char = lp.Character
+    if not char then return end
+    local hum = char:FindFirstChildOfClass("Humanoid")
+    if not hum then return end
+    local knife = char:FindFirstChild("Knife")
+    if not knife then
+        local bp = lp:FindFirstChild("Backpack")
+        if bp then
+            local bpKnife = bp:FindFirstChild("Knife")
+            if bpKnife then
+                local ok2, err2 = pcall(function() hum:EquipTool(bpKnife) end)
+                if not ok2 then warn("[MurderHUD] KillSingle equip: " .. tostring(err2)) return end
+                task.wait(0.1)
+                knife = char:FindFirstChild("Knife")
+            end
         end
+    end
+    if not knife then warn("[MurderHUD] KillSingle: no Knife") return end
+    local knifeEvents = knife:FindFirstChild("Events")
+    local stab = knifeEvents and knifeEvents:FindFirstChild("KnifeStabbed")
+    if not (stab and stab:IsA("RemoteEvent")) then
+        warn("[MurderHUD] KillSingle: KnifeStabbed remote not found") return
+    end
+    local myHRP = char:FindFirstChild("HumanoidRootPart")
+    if not myHRP then return end
+    local low = name:lower()
+    local target = nil
+    for _, p in ipairs(Players:GetPlayers()) do
+        if p ~= lp and p.Name:lower():find(low, 1, true) then
+            target = p
+            break
+        end
+    end
+    if not target then warn("[MurderHUD] KillSingle: not found: " .. name) return end
+    local tChar = target.Character
+    local tHRP  = tChar and tChar:FindFirstChild("HumanoidRootPart")
+    if not tHRP then warn("[MurderHUD] KillSingle: target has no HRP") return end
+    local ok3, err3 = pcall(function()
+        tHRP.CFrame = myHRP.CFrame + myHRP.CFrame.LookVector * 1
     end)
+    if not ok3 then warn("[MurderHUD] KillSingle move: " .. tostring(err3)) end
+    local ok4, err4 = pcall(function() stab:FireServer() end)
+    if not ok4 then warn("[MurderHUD] KillSingle FireServer: " .. tostring(err4)) end
 end
 
 doGrabGun = function()
@@ -1243,11 +1280,195 @@ do
     end)
 end
 
+-- ── Help GUI ──────────────────────────────────────────────────────────────────
+do
+    local gui = Instance.new("ScreenGui")
+    gui.Name         = "MurderHUD_HelpGui"
+    gui.ResetOnSpawn = false
+    gui.Enabled      = false
+    gui.Parent       = game:GetService("CoreGui")
+    helpGui          = gui
+
+    local frame = Instance.new("Frame")
+    frame.Size                   = UDim2.new(0, 310, 0, 390)
+    frame.Position               = UDim2.new(0.5, -155, 0.5, -195)
+    frame.BackgroundColor3       = Color3.fromRGB(18, 18, 18)
+    frame.BackgroundTransparency = 0.05
+    frame.BorderSizePixel        = 0
+    frame.Parent                 = gui
+    local fCorner = Instance.new("UICorner")
+    fCorner.CornerRadius = UDim.new(0, 12)
+    fCorner.Parent       = frame
+
+    local titleLbl = Instance.new("TextLabel")
+    titleLbl.Size                 = UDim2.new(1, -46, 0, 36)
+    titleLbl.Position             = UDim2.new(0, 12, 0, 2)
+    titleLbl.BackgroundTransparency = 1
+    titleLbl.Text                 = "MurderHUD  —  Help"
+    titleLbl.TextColor3           = Color3.fromRGB(255, 255, 255)
+    titleLbl.TextSize             = 15
+    titleLbl.Font                 = Enum.Font.GothamBold
+    titleLbl.TextXAlignment       = Enum.TextXAlignment.Left
+    titleLbl.Parent               = frame
+
+    local closeBtn = Instance.new("TextButton")
+    closeBtn.Size             = UDim2.new(0, 28, 0, 28)
+    closeBtn.Position         = UDim2.new(1, -34, 0, 4)
+    closeBtn.BackgroundColor3 = Color3.fromRGB(150, 30, 30)
+    closeBtn.Text             = "X"
+    closeBtn.TextColor3       = Color3.fromRGB(255, 255, 255)
+    closeBtn.TextSize         = 13
+    closeBtn.Font             = Enum.Font.GothamBold
+    closeBtn.BorderSizePixel  = 0
+    closeBtn.Parent           = frame
+    local cCorner = Instance.new("UICorner")
+    cCorner.CornerRadius = UDim.new(0, 6)
+    cCorner.Parent       = closeBtn
+
+    closeBtn.MouseButton1Click:Connect(function()
+        gui.Enabled = false
+    end)
+
+    local divider = Instance.new("Frame")
+    divider.Size             = UDim2.new(1, -20, 0, 1)
+    divider.Position         = UDim2.new(0, 10, 0, 38)
+    divider.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
+    divider.BorderSizePixel  = 0
+    divider.Parent           = frame
+
+    local scroll = Instance.new("ScrollingFrame")
+    scroll.Size                  = UDim2.new(1, -10, 1, -48)
+    scroll.Position              = UDim2.new(0, 5, 0, 44)
+    scroll.BackgroundTransparency = 1
+    scroll.ScrollBarThickness    = 4
+    scroll.ScrollBarImageColor3  = Color3.fromRGB(90, 90, 90)
+    scroll.CanvasSize            = UDim2.new(0, 0, 0, 0)
+    scroll.AutomaticCanvasSize   = Enum.AutomaticSize.Y
+    scroll.BorderSizePixel       = 0
+    scroll.Parent                = frame
+
+    local listLayout = Instance.new("UIListLayout")
+    listLayout.Padding   = UDim.new(0, 5)
+    listLayout.SortOrder = Enum.SortOrder.LayoutOrder
+    listLayout.Parent    = scroll
+
+    local pad = Instance.new("UIPadding")
+    pad.PaddingLeft   = UDim.new(0, 8)
+    pad.PaddingRight  = UDim.new(0, 8)
+    pad.PaddingTop    = UDim.new(0, 4)
+    pad.PaddingBottom = UDim.new(0, 6)
+    pad.Parent        = scroll
+
+    local lo = 0
+
+    local function addSection(text)
+        lo = lo + 1
+        local lbl = Instance.new("TextLabel")
+        lbl.LayoutOrder            = lo
+        lbl.Size                   = UDim2.new(1, 0, 0, 0)
+        lbl.AutomaticSize          = Enum.AutomaticSize.Y
+        lbl.BackgroundTransparency = 1
+        lbl.Text                   = text
+        lbl.TextColor3             = Color3.fromRGB(255, 195, 50)
+        lbl.TextSize               = 13
+        lbl.Font                   = Enum.Font.GothamBold
+        lbl.TextXAlignment         = Enum.TextXAlignment.Left
+        lbl.TextWrapped            = true
+        lbl.Parent                 = scroll
+    end
+
+    local function addLine(text)
+        lo = lo + 1
+        local lbl = Instance.new("TextLabel")
+        lbl.LayoutOrder            = lo
+        lbl.Size                   = UDim2.new(1, 0, 0, 0)
+        lbl.AutomaticSize          = Enum.AutomaticSize.Y
+        lbl.BackgroundTransparency = 1
+        lbl.Text                   = text
+        lbl.TextColor3             = Color3.fromRGB(205, 205, 205)
+        lbl.TextSize               = 12
+        lbl.Font                   = Enum.Font.Gotham
+        lbl.TextXAlignment         = Enum.TextXAlignment.Left
+        lbl.TextWrapped            = true
+        lbl.Parent                 = scroll
+    end
+
+    addSection("VISUALS")
+    addLine("Red label + outline = Murderer (has Knife)")
+    addLine("Blue label + outline = Sheriff (has Gun before it's dropped)")
+    addLine("Yellow label + outline = Hero (picked up the dropped Gun)")
+    addLine("Green label = Innocent — only visible when you are the Murderer")
+    addLine("Green dot 'Gun' = Dropped gun location in the map")
+
+    addSection("WHEN VISUALS APPEAR")
+    addLine("Labels and outlines appear once a round starts and roles are detected from held items.")
+    addLine("Gun drop marker appears the moment the murderer drops the gun.")
+    addLine("All visuals clear 15 seconds after the round ends. (For cleanup)")
+
+    addSection("BUTTONS")
+    addLine("Throw Knife — Shown when you are the Murderer. Right-click or tap to auto-throw at the nearest visible player.")
+    addLine("Grab Gun — Shown when the gun is dropped and you are innocent (not Sheriff). Tap or press G to teleport to the gun and pick it up.")
+
+    addSection("CHAT COMMANDS")
+    addLine(";help — Open or close this window")
+    addLine(";killall — Kills all player (Murderer only)")
+    addLine(";kill username — Kills the specific player (Murderer only)")
+    
+    addSection("AUTO FEATURES")
+    addLine("Walk speed is locked to 19. (org. 17)")
+    addLine("Jump power is locked to 55. (org. 50)")
+    addLine("Auto-aim fires at the Murderer on left-click or tap with movement prediction.")
+    addLine("Auto killall triggers after 30 seconds idle as Murderer. (So exp will not get wasted when afk and got murd)")
+
+    local dragging = false
+    local dragInput, dragStart, startPos
+
+    local function onInputBegan(input)
+        local isMouse = input.UserInputType == Enum.UserInputType.MouseButton1
+        local isTouch = input.UserInputType == Enum.UserInputType.Touch
+        if not (isMouse or isTouch) then return end
+        dragging  = true
+        dragStart = input.Position
+        startPos  = frame.Position
+        input.Changed:Connect(function()
+            if input.UserInputState == Enum.UserInputState.End then dragging = false end
+        end)
+    end
+
+    local function onInputChanged(input)
+        local isMouse = input.UserInputType == Enum.UserInputType.MouseMovement
+        local isTouch = input.UserInputType == Enum.UserInputType.Touch
+        if isMouse or isTouch then dragInput = input end
+    end
+
+    frame.InputBegan:Connect(onInputBegan)
+    frame.InputChanged:Connect(onInputChanged)
+    titleLbl.InputBegan:Connect(onInputBegan)
+    titleLbl.InputChanged:Connect(onInputChanged)
+
+    UIS.InputChanged:Connect(function(input)
+        if input ~= dragInput or not dragging then return end
+        local delta = input.Position - dragStart
+        frame.Position = UDim2.new(
+            startPos.X.Scale,
+            startPos.X.Offset + delta.X,
+            startPos.Y.Scale,
+            startPos.Y.Offset + delta.Y
+        )
+    end)
+end
+
 lp.Chatted:Connect(function(msg)
     local lower = msg:lower()
     if lower == ";killall" or lower == ";kill" then
         local ok, err = pcall(doKillAll)
         if not ok then warn("[MurderHUD] KillAll: " .. tostring(err)) end
+    elseif lower:sub(1, 6) == ";kill " then
+        local name = msg:sub(7)
+        local ok, err = pcall(doKillSingle, name)
+        if not ok then warn("[MurderHUD] KillSingle: " .. tostring(err)) end
+    elseif lower == ";help" then
+        helpGui.Enabled = not helpGui.Enabled
     end
 end)
 
