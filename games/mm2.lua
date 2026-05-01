@@ -33,7 +33,8 @@ local roundActive       = false
 local murderGui = nil
 local innocentGui = nil
 local helpGui = nil
-local flingActive = false
+local autofarmActive = false
+local timerLabel     = nil
 local roundId = 0
 local function isInLobby(char)
     if not char then return false end
@@ -1117,40 +1118,121 @@ local function doKillSingle(name)
     if not ok4 then warn("[MurderHUD] KillSingle FireServer: " .. tostring(err4)) end
 end
 
-local function doFling(name)
-    local char = lp.Character
-    if not char then return end
-    local myHRP = char:FindFirstChild("HumanoidRootPart")
+local function parseTimer(text)
+    if not text then return nil end
+    local m, s = text:match("(%d+)m%s*(%d+)s")
+    if m and s then return tonumber(m) * 60 + tonumber(s) end
+    local mo = text:match("(%d+)m")
+    if mo then return tonumber(mo) * 60 end
+    local so = text:match("(%d+)s")
+    if so then return tonumber(so) end
+    local mc, sc = text:match("^(%d+):(%d+)$")
+    if mc and sc then return tonumber(mc) * 60 + tonumber(sc) end
+    local sec = text:match("^(%d+)$")
+    if sec then return tonumber(sec) end
+    return nil
+end
+
+local function freezeAbove(hrp, studs)
+    hrp.CFrame   = CFrame.new(hrp.Position + Vector3.new(0, studs, 0))
+    hrp.Anchored = true
+end
+
+local function waitUntilTimer(secs, guard)
+    while autofarmActive do
+        if guard and not guard() then return false end
+        local t = timerLabel and parseTimer(timerLabel.Text)
+        if t and t <= secs then return true end
+        task.wait(0.5)
+    end
+    return false
+end
+
+local function doAutofarmShoot()
+    if not murderer then return end
+    local mChar = murderer.Character
+    local mHRP  = mChar and mChar:FindFirstChild("HumanoidRootPart")
+    if not mHRP then return end
+    local myChar = lp.Character
+    local myHRP  = myChar and myChar:FindFirstChild("HumanoidRootPart")
     if not myHRP then return end
-    local low = name:lower()
-    local target = nil
-    for _, p in ipairs(Players:GetPlayers()) do
-        if p ~= lp and p.Name:lower():find(low, 1, true) then
-            target = p
-            break
-        end
-    end
-    if not target then warn("[MurderHUD] Fling: not found: " .. name) return end
-    local tChar = target.Character
-    local tHRP  = tChar and tChar:FindFirstChild("HumanoidRootPart")
-    if not tHRP then warn("[MurderHUD] Fling: target has no HRP") return end
-    local ok, err = pcall(function()
-        local saved = myHRP.CFrame
-        flingActive = true
-        local conn = RunService.Heartbeat:Connect(function()
-            local tc = target.Character
-            local th = tc and tc:FindFirstChild("HumanoidRootPart")
-            if th then myHRP.CFrame = th.CFrame end
+    myHRP.Anchored = false
+    myHRP.CFrame   = CFrame.new(mHRP.Position + mHRP.CFrame.LookVector * 8, mHRP.Position)
+    task.wait(0.05)
+    local aimPos = getAimPosition() or mHRP.Position
+    local remote = getShootRemote()
+    if remote then
+        pcall(function()
+            remote:FireServer(CFrame.new(myHRP.Position, aimPos), CFrame.new(aimPos))
         end)
-        task.wait(2)
-        conn:Disconnect()
-        flingActive = false
-        myHRP.CFrame = saved
-    end)
-    if not ok then
-        flingActive = false
-        warn("[MurderHUD] Fling: " .. tostring(err))
     end
+end
+
+local function stopAutofarm()
+    autofarmActive = false
+    local char = lp.Character
+    local hrp  = char and char:FindFirstChild("HumanoidRootPart")
+    if hrp and hrp.Anchored then hrp.Anchored = false end
+end
+
+local function runAutofarm()
+    task.spawn(function()
+        while autofarmActive do
+            if not roundActive then task.wait(1) continue end
+            local char = lp.Character
+            local hrp  = char and char:FindFirstChild("HumanoidRootPart")
+            if not hrp then task.wait(0.5) continue end
+
+            if isLpMurd then
+                pcall(doKillAll)
+                task.wait(5)
+
+            elseif isLpSheriff then
+                freezeAbove(hrp, 50)
+                local ok = waitUntilTimer(30, function()
+                    return autofarmActive and roundActive and isLpSheriff
+                end)
+                if ok and autofarmActive then
+                    doAutofarmShoot()
+                    task.wait(0.3)
+                    local c2 = lp.Character
+                    local h2 = c2 and c2:FindFirstChild("HumanoidRootPart")
+                    if h2 then freezeAbove(h2, 50) end
+                end
+                task.wait(1)
+
+            else
+                freezeAbove(hrp, 50)
+                while autofarmActive and not gunDropped and roundActive do
+                    task.wait(0.5)
+                end
+                if autofarmActive and gunDropped and roundActive then
+                    local c2 = lp.Character
+                    local h2 = c2 and c2:FindFirstChild("HumanoidRootPart")
+                    if h2 then h2.Anchored = false end
+                    pcall(doGrabGun)
+                    task.wait(0.3)
+                    local c3 = lp.Character
+                    local h3 = c3 and c3:FindFirstChild("HumanoidRootPart")
+                    if h3 then freezeAbove(h3, 50) end
+                    local ok = waitUntilTimer(60, function()
+                        return autofarmActive and roundActive and not isLpMurd
+                    end)
+                    if ok and autofarmActive then
+                        doAutofarmShoot()
+                        task.wait(0.3)
+                        local c4 = lp.Character
+                        local h4 = c4 and c4:FindFirstChild("HumanoidRootPart")
+                        if h4 then freezeAbove(h4, 50) end
+                    end
+                end
+                task.wait(1)
+            end
+        end
+        local char = lp.Character
+        local hrp  = char and char:FindFirstChild("HumanoidRootPart")
+        if hrp and hrp.Anchored then hrp.Anchored = false end
+    end)
 end
 
 doGrabGun = function()
@@ -1453,7 +1535,8 @@ do
     addLine(";help — Open or close this window")
     addLine(";killall — Kills all player (Murderer only)")
     addLine(";kill username — Kills the specific player (Murderer only)")
-    addLine(";fling username — Flings a player (partial name works)")
+    -- ADD
+addLine(";autofarm — Toggle autofarm. Murderer: kills all immediately. Sheriff: freezes 50 studs up, shoots at 30s left. Innocent: freezes up, grabs gun, shoots at 60s left, (doesn't include auto farm coins)")
     addLine(";help — shows this gui")
     
     addSection("AUTO FEATURES")
@@ -1509,10 +1592,13 @@ lp.Chatted:Connect(function(msg)
         local name = msg:sub(7)
         local ok, err = pcall(doKillSingle, name)
         if not ok then warn("[MurderHUD] KillSingle: " .. tostring(err)) end
-    elseif lower:sub(1, 7) == ";fling " then
-        local name = msg:sub(8)
-        local ok, err = pcall(doFling, name)
-        if not ok then warn("[MurderHUD] Fling: " .. tostring(err)) end
+    elseif lower == ";autofarm" then
+        if autofarmActive then
+            stopAutofarm()
+        else
+            autofarmActive = true
+            runAutofarm()
+        end
     elseif lower == ";help" then
         helpGui.Enabled = not helpGui.Enabled
     end
@@ -1550,12 +1636,13 @@ Workspace.DescendantRemoving:Connect(function(desc)
 end)
 
 task.spawn(function()
-    local ok, timerLabel = pcall(function()
+    local ok, result = pcall(function()
         return Workspace:WaitForChild("RoundTimerPart", 10)
             :WaitForChild("SurfaceGui", 5)
             :WaitForChild("Timer", 5)
     end)
-    if not ok or not timerLabel then warn("[MurderHUD] RoundTimer: not found") return end
+    if not ok or not result then warn("[MurderHUD] RoundTimer: not found") return end
+    timerLabel = result
     timerLabel:GetPropertyChangedSignal("Active"):Connect(function()
         if timerLabel.Active then
             if not roundActive then startRound() end
@@ -1600,30 +1687,6 @@ RunService.Heartbeat:Connect(function()
             lpLastActiveTime = tick()
             local ok, err = pcall(doKillAll)
             if not ok then warn("[MurderHUD] AutoKillAll: " .. tostring(err)) end
-        end
-    end
-end)
-
-task.spawn(function()
-    local movel = 0.1
-    while true do
-        RunService.Heartbeat:Wait()
-        if flingActive then
-            local c = lp.Character
-            local hrp = c and c:FindFirstChild("HumanoidRootPart")
-            if c and c.Parent and hrp and hrp.Parent then
-                local vel = hrp.Velocity
-                hrp.Velocity = vel * 10000 + Vector3.new(0, 10000, 0)
-                RunService.RenderStepped:Wait()
-                if c and c.Parent and hrp and hrp.Parent then
-                    hrp.Velocity = vel
-                end
-                RunService.Stepped:Wait()
-                if c and c.Parent and hrp and hrp.Parent then
-                    hrp.Velocity = vel + Vector3.new(0, movel, 0)
-                    movel = movel * -1
-                end
-            end
         end
     end
 end)
