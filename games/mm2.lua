@@ -764,7 +764,6 @@ local function getSmoothedVel(p)
 end
 
 local function getAimPosition()
-    task.wait(0.1)
     if not murderer then return nil end
     local char = murderer.Character
     if not char then return nil end
@@ -926,6 +925,7 @@ UIS.InputEnded:Connect(function(input, processed)
                    and not UIS:GetFocusedTextBox()
                    and input.Position.X > (workspace.CurrentCamera.ViewportSize.X * 0.35))
     if not isFire then return end
+    task.wait(0.1)
     if touchStartPos then
         local delta = (Vector2.new(input.Position.X, input.Position.Y) - Vector2.new(touchStartPos.X, touchStartPos.Y)).Magnitude
         if delta > 12 then touchStartPos = nil return end
