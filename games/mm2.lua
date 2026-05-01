@@ -1134,12 +1134,20 @@ local function doFling(name)
     local tHRP  = tChar and tChar:FindFirstChild("HumanoidRootPart")
     if not tHRP then warn("[MurderHUD] Fling: target has no HRP") return end
     local ok, err = pcall(function()
-        tHRP.CFrame = myHRP.CFrame + myHRP.CFrame.LookVector * 2
-        tHRP.AssemblyLinearVelocity = Vector3.new(
-            math.random(-1, 1) * 600,
-            800,
-            math.random(-1, 1) * 600
-        )
+        local thr = Instance.new("BodyThrust")
+        thr.Name     = "FlingThrust"
+        thr.Force    = Vector3.new(9999, 9999, 9999)
+        thr.Location = myHRP.Position
+        thr.Parent   = myHRP
+        repeat
+            local tHRP = target.Character and target.Character:FindFirstChild("HumanoidRootPart")
+            if tHRP then
+                myHRP.CFrame = tHRP.CFrame
+                thr.Location = tHRP.Position
+            end
+            RunService.Heartbeat:Wait()
+        until not (target.Character and target.Character:FindFirstChild("Head"))
+        thr:Destroy()
     end)
     if not ok then warn("[MurderHUD] Fling: " .. tostring(err)) end
 end
