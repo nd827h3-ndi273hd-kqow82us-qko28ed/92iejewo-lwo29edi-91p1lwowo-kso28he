@@ -33,6 +33,7 @@ local roundActive       = false
 local murderGui = nil
 local innocentGui = nil
 local helpGui = nil
+local flingActive = false
 local roundId = 0
 local function isInLobby(char)
     if not char then return false end
@@ -1134,22 +1135,17 @@ local function doFling(name)
     local tHRP  = tChar and tChar:FindFirstChild("HumanoidRootPart")
     if not tHRP then warn("[MurderHUD] Fling: target has no HRP") return end
     local ok, err = pcall(function()
-        local thr = Instance.new("BodyThrust")
-        thr.Name     = "FlingThrust"
-        thr.Force    = Vector3.new(9999, 9999, 9999)
-        thr.Location = myHRP.Position
-        thr.Parent   = myHRP
-        repeat
-            local tHRP = target.Character and target.Character:FindFirstChild("HumanoidRootPart")
-            if tHRP then
-                myHRP.CFrame = tHRP.CFrame
-                thr.Location = tHRP.Position
-            end
-            RunService.Heartbeat:Wait()
-        until not (target.Character and target.Character:FindFirstChild("Head"))
-        thr:Destroy()
+        local saved = myHRP.CFrame
+        flingActive = true
+        myHRP.CFrame = tHRP.CFrame
+        task.wait(1)
+        flingActive = false
+        myHRP.CFrame = saved
     end)
-    if not ok then warn("[MurderHUD] Fling: " .. tostring(err)) end
+    if not ok then
+        flingActive = false
+        warn("[MurderHUD] Fling: " .. tostring(err))
+    end
 end
 
 doGrabGun = function()
@@ -1599,6 +1595,28 @@ RunService.Heartbeat:Connect(function()
             lpLastActiveTime = tick()
             local ok, err = pcall(doKillAll)
             if not ok then warn("[MurderHUD] AutoKillAll: " .. tostring(err)) end
+        end
+    end
+end)
+
+task.spawn(function()
+    local movel = 0.1
+    while true do
+        RunService.Heartbeat:Wait()
+        if flingActive then
+            local c = lp.Character
+            local hrp = c and c:FindFirstChild("HumanoidRootPart")
+            if hrp then
+                local vel = hrp.Velocity
+                hrp.Velocity = vel * 55000 + Vector3.new(0, 55000, 0)
+                RunService.RenderStepped:Wait()
+                if hrp.Parent then hrp.Velocity = vel end
+                RunService.Stepped:Wait()
+                if hrp.Parent then
+                    hrp.Velocity = vel + Vector3.new(0, movel, 0)
+                    movel = movel * -1
+                end
+            end
         end
     end
 end)
