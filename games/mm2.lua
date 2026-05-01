@@ -352,6 +352,9 @@ local function endRound()
     if not roundActive then return end
     roundActive = false
     playersInRound = {}
+    local char = lp.Character
+    local hrp  = char and char:FindFirstChild("HumanoidRootPart")
+    if hrp and hrp.Anchored then hrp.Anchored = false end
     if murderGui then murderGui.Enabled = false end
     if innocentGui then innocentGui.Enabled = false end
     gunDropped = false
@@ -1133,8 +1136,9 @@ local function parseTimer(text)
     return nil
 end
 
-local function freezeAbove(hrp, studs)
-    hrp.CFrame   = CFrame.new(hrp.Position + Vector3.new(0, studs, 0))
+local function freezeAbove(hrp)
+    hrp.CFrame   = CFrame.new(hrp.Position + Vector3.new(0, 100, 0))
+    wait(0.2)
     hrp.Anchored = true
 end
 
@@ -1166,6 +1170,10 @@ local function doAutofarmShoot()
             remote:FireServer(CFrame.new(myHRP.Position, aimPos), CFrame.new(aimPos))
         end)
     end
+    task.wait(0.1)
+    local c = lp.Character
+    local h = c and c:FindFirstChild("HumanoidRootPart")
+    if h then freezeAbove(h) end
 end
 
 local function stopAutofarm()
@@ -1188,21 +1196,17 @@ local function runAutofarm()
                 task.wait(5)
 
             elseif isLpSheriff then
-                freezeAbove(hrp, 50)
+                if not hrp.Anchored then freezeAbove(hrp) end
                 local ok = waitUntilTimer(30, function()
                     return autofarmActive and roundActive and isLpSheriff
                 end)
                 if ok and autofarmActive then
                     doAutofarmShoot()
-                    task.wait(0.3)
-                    local c2 = lp.Character
-                    local h2 = c2 and c2:FindFirstChild("HumanoidRootPart")
-                    if h2 then freezeAbove(h2, 50) end
                 end
                 task.wait(1)
 
             else
-                freezeAbove(hrp, 50)
+                if not hrp.Anchored then freezeAbove(hrp) end
                 while autofarmActive and not gunDropped and roundActive do
                     task.wait(0.5)
                 end
@@ -1214,16 +1218,12 @@ local function runAutofarm()
                     task.wait(0.3)
                     local c3 = lp.Character
                     local h3 = c3 and c3:FindFirstChild("HumanoidRootPart")
-                    if h3 then freezeAbove(h3, 50) end
+                    if h3 then freezeAbove(h3) end
                     local ok = waitUntilTimer(60, function()
                         return autofarmActive and roundActive and not isLpMurd
                     end)
                     if ok and autofarmActive then
                         doAutofarmShoot()
-                        task.wait(0.3)
-                        local c4 = lp.Character
-                        local h4 = c4 and c4:FindFirstChild("HumanoidRootPart")
-                        if h4 then freezeAbove(h4, 50) end
                     end
                 end
                 task.wait(1)
