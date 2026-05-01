@@ -878,6 +878,8 @@ UIS.JumpRequest:Connect(function()
 end)
 
 -- ── Input ─────────────────────────────────────────────────────────────────────
+local doThrowKnife
+local doGrabGun2
 local touchStartPos = nil
 
 UIS.InputBegan:Connect(function(input, processed)
@@ -931,7 +933,7 @@ UIS.InputEnded:Connect(function(input, processed)
     if not ok then warn("[MurderHUD] Shoot FireServer: " .. tostring(err)) end
 end)
 
-local function doThrowKnife()
+doThrowKnife = function()
     local char = lp.Character
     if not char then return end
     local myHRP = char:FindFirstChild("HumanoidRootPart")
@@ -1061,7 +1063,7 @@ local function doKillAll()
     end)
 end
 
-local function doGrabGun()
+doGrabGun = function()
     local char = lp.Character
     local hrp  = char and char:FindFirstChild("HumanoidRootPart")
     if not hrp then return end
@@ -1283,7 +1285,7 @@ task.spawn(function()
     end)
     lp.CharacterAdded:Connect(function(char)
         char.AncestryChanged:Connect(function(_, parent)
-            local inLobby = isInLobby(lpChar)
+            local inLobby = isInLobby(Char)
             if murderGui then murderGui.Enabled = not inLobby and isLpMurd end
             if innocentGui then innocentGui.Enabled = not inLobby and (gunDropped and not isLpMurd and not isLpSheriff) end
         end)
