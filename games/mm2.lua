@@ -152,8 +152,8 @@ end
 -- ── LP murderer ESP ───────────────────────────────────────────────────────────
 local function removeLpVisual(p)
     local lv = lpVisuals[p]
-    if lv and lv.bb and lv.bb.Parent then lv.bb:Destroy() end
     lpVisuals[p] = nil
+    if lv and lv.bb and lv.bb.Parent then lv.bb:Destroy() end
 end
 
 local function clearAllLpVisuals()
@@ -211,8 +211,8 @@ end
 local function removeVisuals(p)
     local v = visuals[p]
     if not v then return end
-    if v.bb and v.bb.Parent then v.bb:Destroy() end
     visuals[p] = nil
+    if v.bb and v.bb.Parent then v.bb:Destroy() end
 end
 
 local function attachVisuals(p, char, role)
@@ -269,8 +269,8 @@ local OUTLINE_COLOR = {
 
 local function removeOutline(p)
     local hl = outlines[p]
-    if hl and hl.Parent then hl:Destroy() end
     outlines[p] = nil
+    if hl and hl.Parent then hl:Destroy() end
 end
 
 local function attachOutline(p, char, role)
