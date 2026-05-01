@@ -344,6 +344,7 @@ local function updateLpVisualFor(p)
     end
 end
 
+local applyRole
 local function endRound()
     if not roundActive then return end
     roundActive = false
@@ -402,7 +403,7 @@ local function startRound()
 end
 
 -- ── Apply role state for a player ─────────────────────────────────────────────
-local function applyRole(p)
+applyRole = function(p)
     local role  = getRole(p)
     local pChar = p.Character
     local old   = roles[p]
