@@ -1283,7 +1283,7 @@ end
 -- ── Help GUI ──────────────────────────────────────────────────────────────────
 do
     local gui = Instance.new("ScreenGui")
-    gui.Name         = "MurderHUD_HelpGui"
+    gui.Name         = "ShadowX_HelpGui"
     gui.ResetOnSpawn = false
     gui.Enabled      = false
     gui.Parent       = game:GetService("CoreGui")
@@ -1304,7 +1304,7 @@ do
     titleLbl.Size                 = UDim2.new(1, -46, 0, 36)
     titleLbl.Position             = UDim2.new(0, 12, 0, 2)
     titleLbl.BackgroundTransparency = 1
-    titleLbl.Text                 = "MurderHUD  —  Help"
+    titleLbl.Text                 = "ShadowX  —  Help"
     titleLbl.TextColor3           = Color3.fromRGB(255, 255, 255)
     titleLbl.TextSize             = 15
     titleLbl.Font                 = Enum.Font.GothamBold
