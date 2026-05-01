@@ -1183,7 +1183,7 @@ local function stopAutofarm()
     local hrp  = char and char:FindFirstChild("HumanoidRootPart")
     if hrp and hrp.Anchored then hrp.Anchored = false end
 end
-w
+
 local function runAutofarm()
     task.spawn(function()
         while autofarmActive do
