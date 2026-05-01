@@ -3,7 +3,7 @@ print("V2.100.213 - Fixed doesn't work on pc and added pc hotkeys G for Grabgun 
 if _G.__MurderHUD_Running then return end
 _G.__MurderHUD_Running = true
 
-local BULLET_DELAY    = 0.3
+local BULLET_DELAY    = 0.28
 local VEL_SMOOTH_SIZE  = 4
 local FAKEBOMB_Y_OFFSET = 2.7
 local lpLastActiveTime  = 0
