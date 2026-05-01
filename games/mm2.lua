@@ -1153,27 +1153,28 @@ local function waitUntilTimer(secs, guard)
 end
 
 local function doAutofarmShoot()
-    if not murderer then return end
-    local mChar = murderer.Character
-    local mHRP  = mChar and mChar:FindFirstChild("HumanoidRootPart")
-    if not mHRP then return end
-    local myChar = lp.Character
-    local myHRP  = myChar and myChar:FindFirstChild("HumanoidRootPart")
-    if not myHRP then return end
-    myHRP.Anchored = false
-    myHRP.CFrame   = CFrame.new(mHRP.Position + mHRP.CFrame.LookVector * 8, mHRP.Position)
-    task.wait(0.05)
-    local aimPos = getAimPosition() or mHRP.Position
-    local remote = getShootRemote()
-    if remote then
-        pcall(function()
-            remote:FireServer(CFrame.new(myHRP.Position, aimPos), CFrame.new(aimPos))
-        end)
+    while autofarmActive and roundActive and murderer do
+        local mChar = murderer.Character
+        local mHRP  = mChar and mChar:FindFirstChild("HumanoidRootPart")
+        if not mHRP then task.wait(0.5) continue end
+        local myChar = lp.Character
+        local myHRP  = myChar and myChar:FindFirstChild("HumanoidRootPart")
+        if not myHRP then task.wait(0.5) continue end
+        myHRP.Anchored = false
+        myHRP.CFrame   = CFrame.new(mHRP.Position + mHRP.CFrame.LookVector * 8, mHRP.Position)
+        task.wait(0.05)
+        local aimPos = getAimPosition() or mHRP.Position
+        local remote = getShootRemote()
+        if remote then
+            pcall(function()
+                remote:FireServer(CFrame.new(myHRP.Position, aimPos), CFrame.new(aimPos))
+            end)
+        end
+        task.wait(0.1)
     end
-    task.wait(0.1)
     local c = lp.Character
     local h = c and c:FindFirstChild("HumanoidRootPart")
-    if h then freezeAbove(h) end
+    if h and not h.Anchored then freezeAbove(h) end
 end
 
 local function stopAutofarm()
@@ -1182,7 +1183,7 @@ local function stopAutofarm()
     local hrp  = char and char:FindFirstChild("HumanoidRootPart")
     if hrp and hrp.Anchored then hrp.Anchored = false end
 end
-
+w
 local function runAutofarm()
     task.spawn(function()
         while autofarmActive do
@@ -1192,8 +1193,16 @@ local function runAutofarm()
             if not hrp then task.wait(0.5) continue end
 
             if isLpMurd then
-                pcall(doKillAll)
-                task.wait(5)
+                local knife = char:FindFirstChild("Knife")
+                if not knife then
+                    local bp = lp:FindFirstChild("Backpack")
+                    knife = bp and bp:FindFirstChild("Knife")
+                end
+                if not knife then task.wait(0.3) continue end
+                while autofarmActive and roundActive and isLpMurd do
+                    pcall(doKillAll)
+                    task.wait(3)
+                end
 
             elseif isLpSheriff then
                 if not hrp.Anchored then freezeAbove(hrp) end
@@ -1203,7 +1212,7 @@ local function runAutofarm()
                 if ok and autofarmActive then
                     doAutofarmShoot()
                 end
-                task.wait(1)
+                task.wait(0.5)
 
             else
                 if not hrp.Anchored then freezeAbove(hrp) end
@@ -1226,7 +1235,7 @@ local function runAutofarm()
                         doAutofarmShoot()
                     end
                 end
-                task.wait(1)
+                task.wait(0.5)
             end
         end
         local char = lp.Character
