@@ -1,5 +1,5 @@
 -- LocalScript: StarterPlayerScripts
-print("V2.105.228")
+print("V2.106.229")
 if _G.__MurderHUD_Running then return end
 _G.__MurderHUD_Running = true
 
@@ -1116,6 +1116,34 @@ local function doKillSingle(name)
     if not ok4 then warn("[MurderHUD] KillSingle FireServer: " .. tostring(err4)) end
 end
 
+local function doFling(name)
+    local char = lp.Character
+    if not char then return end
+    local myHRP = char:FindFirstChild("HumanoidRootPart")
+    if not myHRP then return end
+    local low = name:lower()
+    local target = nil
+    for _, p in ipairs(Players:GetPlayers()) do
+        if p ~= lp and p.Name:lower():find(low, 1, true) then
+            target = p
+            break
+        end
+    end
+    if not target then warn("[MurderHUD] Fling: not found: " .. name) return end
+    local tChar = target.Character
+    local tHRP  = tChar and tChar:FindFirstChild("HumanoidRootPart")
+    if not tHRP then warn("[MurderHUD] Fling: target has no HRP") return end
+    local ok, err = pcall(function()
+        tHRP.CFrame = myHRP.CFrame + myHRP.CFrame.LookVector * 2
+        tHRP.AssemblyLinearVelocity = Vector3.new(
+            math.random(-1, 1) * 600,
+            800,
+            math.random(-1, 1) * 600
+        )
+    end)
+    if not ok then warn("[MurderHUD] Fling: " .. tostring(err)) end
+end
+
 doGrabGun = function()
     local char = lp.Character
     local hrp  = char and char:FindFirstChild("HumanoidRootPart")
@@ -1288,7 +1316,7 @@ do
     local gui = Instance.new("ScreenGui")
     gui.Name         = "ShadowX_HelpGui"
     gui.ResetOnSpawn = false
-    gui.Enabled      = false
+    gui.Enabled      = true
     gui.Parent       = game:GetService("CoreGui")
     helpGui          = gui
 
@@ -1416,6 +1444,8 @@ do
     addLine(";help — Open or close this window")
     addLine(";killall — Kills all player (Murderer only)")
     addLine(";kill username — Kills the specific player (Murderer only)")
+    addLine(";fling username — Flings a player (partial name works)")
+    addLine(";help — shows this gui")
     
     addSection("AUTO FEATURES")
     addLine("Walk speed is locked to 19. (org. 17)")
@@ -1470,6 +1500,10 @@ lp.Chatted:Connect(function(msg)
         local name = msg:sub(7)
         local ok, err = pcall(doKillSingle, name)
         if not ok then warn("[MurderHUD] KillSingle: " .. tostring(err)) end
+    elseif lower:sub(1, 7) == ";fling " then
+        local name = msg:sub(8)
+        local ok, err = pcall(doFling, name)
+        if not ok then warn("[MurderHUD] Fling: " .. tostring(err)) end
     elseif lower == ";help" then
         helpGui.Enabled = not helpGui.Enabled
     end
