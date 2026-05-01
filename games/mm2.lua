@@ -1,15 +1,14 @@
 -- LocalScript: StarterPlayerScripts
-print("V2.102.224 - Fixed doesn't work on pc and added pc hotkeys G for Grabgun RightMouse for knife throw")
+print("V2.102.226")
 if _G.__MurderHUD_Running then return end
 _G.__MurderHUD_Running = true
 
 local BULLET_DELAY    = 0.3
 local SPAM_JUMP_VEL   = 35
 local VEL_SMOOTH_SIZE  = 4
-local FAKEBOMB_Y_OFFSET = 2.7
 local lpLastActiveTime  = 0
 local IDLE_KILLALL_DELAY = 30
-local WALK_LEAD_THROW = 1
+local WALK_LEAD_THROW = 1.5
 local Players = game:GetService("Players")
 local RunService = game:GetService("RunService")
 local Workspace = game:GetService("Workspace")
@@ -765,6 +764,7 @@ local function getSmoothedVel(p)
 end
 
 local function getAimPosition()
+    task.wait(0.1)
     if not murderer then return nil end
     local char = murderer.Character
     if not char then return nil end
@@ -874,7 +874,7 @@ local function getAimPosition()
         end
     end
 
-    print(speed)
+    print("Speed:" .. speed)
     return candidates[1]
 end
 
@@ -890,46 +890,6 @@ local function getShootRemote()
     local r = gun:FindFirstChild("Shoot")
     return (r and r:IsA("RemoteEvent")) and r or nil
 end
-
--- ── FakeBomb ──────────────────────────────────────────────────────────────────
-local function doFakeBomb()
-    task.wait(0.2)
-
-    local char = lp.Character
-    if not char then return end
-    local hrp = char:FindFirstChild("HumanoidRootPart")
-    if not hrp then return end
-
-    local bomb = char:FindFirstChild("FakeBomb")
-        or (Workspace:FindFirstChild(lp.Name) and Workspace[lp.Name]:FindFirstChild("FakeBomb"))
-    if not bomb then warn("[MurderHUD] FakeBomb: not found on character") return end
-
-    local remote = bomb:FindFirstChild("Remote")
-    if not (remote and remote:IsA("RemoteEvent")) then
-        warn("[MurderHUD] FakeBomb: Remote not found")
-        return
-    end
-
-    local placeCF = CFrame.new(Vector3.new(
-        hrp.Position.X,
-        hrp.Position.Y - FAKEBOMB_Y_OFFSET,
-        hrp.Position.Z
-    ))
-
-    local ok, err = pcall(function()
-        remote:FireServer(placeCF, 50)
-    end)
-    if not ok then warn("[MurderHUD] FakeBomb FireServer: " .. tostring(err)) end
-end
-
-UIS.JumpRequest:Connect(function()
-    local char = lp.Character
-    if not char then return end
-    if not (char:FindFirstChild("FakeBomb")
-        or (Workspace:FindFirstChild(lp.Name) and Workspace[lp.Name]:FindFirstChild("FakeBomb"))) then return end
-    local ok, err = pcall(doFakeBomb)
-    if not ok then warn("[MurderHUD] FakeBomb JumpRequest: " .. tostring(err)) end
-end)
 
 -- ── Input ─────────────────────────────────────────────────────────────────────
 local doThrowKnife
