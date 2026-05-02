@@ -1161,8 +1161,7 @@ local function doAutofarmShoot()
         local myHRP  = myChar and myChar:FindFirstChild("HumanoidRootPart")
         if not myHRP then task.wait(0.5) continue end
         myHRP.Anchored = false
-        myHRP.CFrame   = CFrame.new(mHRP.Position + mHRP.CFrame.LookVector * 8, mHRP.Position)
-        task.wait(0.05)
+        myHRP.CFrame   = CFrame.new(mHRP.Position + mHRP.CFrame.LookVector * 10, mHRP.Position)
         local aimPos = getAimPosition() or mHRP.Position
         local remote = getShootRemote()
         if remote then
@@ -1170,7 +1169,6 @@ local function doAutofarmShoot()
                 remote:FireServer(CFrame.new(myHRP.Position, aimPos), CFrame.new(aimPos))
             end)
         end
-        task.wait(0.1)
     end
     local c = lp.Character
     local h = c and c:FindFirstChild("HumanoidRootPart")
@@ -1220,14 +1218,19 @@ local function runAutofarm()
                     task.wait(0.5)
                 end
                 if autofarmActive and gunDropped and roundActive then
-                    local c2 = lp.Character
-                    local h2 = c2 and c2:FindFirstChild("HumanoidRootPart")
-                    if h2 then h2.Anchored = false end
-                    pcall(doGrabGun)
-                    task.wait(0.3)
-                    local c3 = lp.Character
-                    local h3 = c3 and c3:FindFirstChild("HumanoidRootPart")
-                    if h3 then freezeAbove(h3) end
+                    while autofarmActive and roundActive do
+                        local gd = Workspace:FindFirstChild("GunDrop", true)
+                        if not gd then break end
+                        local c2 = lp.Character
+                        local h2 = c2 and c2:FindFirstChild("HumanoidRootPart")
+                        if h2 then h2.Anchored = false end
+                        pcall(doGrabGun)
+                        task.wait(0.1)
+                        local c3 = lp.Character
+                        local h3 = c3 and c3:FindFirstChild("HumanoidRootPart")
+                        if h3 then freezeAbove(h3) end
+                        task.wait(0.3)
+                    end
                     local ok = waitUntilTimer(60, function()
                         return autofarmActive and roundActive and not isLpMurd
                     end)
