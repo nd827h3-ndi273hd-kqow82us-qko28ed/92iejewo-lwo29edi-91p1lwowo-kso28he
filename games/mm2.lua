@@ -1138,9 +1138,7 @@ local function parseTimer(text)
 end
 
 local function freezeAbove(hrp)
-    hrp.CFrame   = CFrame.new(hrp.Position + Vector3.new(0, 100, 0))
-    wait(0.2)
-    hrp.Anchored = true
+    hrp.CFrame   = CFrame.new(hrp.Position + Vector3.new(0, 200, 0))
 end
 
 local function waitUntilTimer(secs, guard)
@@ -1173,12 +1171,11 @@ local function doAutofarmShoot()
         local myChar = lp.Character
         local myHRP  = myChar and myChar:FindFirstChild("HumanoidRootPart")
         if not myHRP then return end
-        myHRP.Anchored = false
         local bp = lp:FindFirstChild("Backpack")
         local hasGun = myChar:FindFirstChild("Gun") ~= nil
             or (bp and bp:FindFirstChild("Gun") ~= nil)
         if isLpSheriff or hasGun then
-            myHRP.CFrame = CFrame.new(mHRP.Position + mHRP.CFrame.LookVector * 10, mHRP.Position)
+            myHRP.CFrame = CFrame.new(mHRP.Position + mHRP.CFrame.LookVector * 15, mHRP.Position)
         end
         local aimPos = getAimPosition() or mHRP.Position
         local remote = getShootRemote()
