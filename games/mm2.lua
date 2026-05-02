@@ -7,8 +7,7 @@ local BULLET_DELAY    = 0.3
 local SPAM_JUMP_VEL   = 35
 local VEL_SMOOTH_SIZE  = 4
 local lpLastActiveTime  = 0
-local IDLE_KILLALL_DELAY = 30
-local WALK_LEAD_THROW = 1.5
+local IDLE_KILLALL_DELAY = 20
 local Players = game:GetService("Players")
 local RunService = game:GetService("RunService")
 local Workspace = game:GetService("Workspace")
@@ -956,6 +955,70 @@ UIS.InputEnded:Connect(function(input, processed)
     if not ok then warn("[MurderHUD] Shoot FireServer: " .. tostring(err)) end
 end)
 
+local function getPredPos(p, hrp, myHRP)
+    local char = p.Character
+    local torso = char and (char:FindFirstChild("UpperTorso") or char:FindFirstChild("Torso"))
+    local head  = char and char:FindFirstChild("Head")
+    local hum   = char and char:FindFirstChildOfClass("Humanoid")
+
+    local rawVel  = hrp.AssemblyLinearVelocity
+    local smoothV = getSmoothedVel(p)
+    local vel     = smoothV * 0.6 + rawVel * 0.4
+
+    local pos   = hrp.Position
+    local hVel  = Vector3.new(vel.X, 0, vel.Z)
+    local speed = hVel.Magnitude
+
+    local isClimbing = hum and hum:GetState() == Enum.HumanoidStateType.Climbing
+    local inAir      = (hum and hum.FloorMaterial == Enum.Material.Air) and not isClimbing
+
+    local torsoOff = torso and (torso.Position - pos) or Vector3.new(0, 0.9, 0)
+
+    local dist = (pos - myHRP.Position).Magnitude
+    local dt   = BULLET_DELAY + math.clamp(dist / 400, 0, 0.1)
+
+    if speed < 1.5 and not inAir then
+        return torso and torso.Position or (pos + torsoOff)
+    end
+
+    local hUnit = speed > 0 and hVel.Unit or Vector3.zero
+    local lead
+    if     speed >= 17.5 then lead = 4.9
+    elseif speed >= 15.8 then lead = 4.7
+    elseif speed >= 11   then lead = 2.6
+    elseif speed > 8     then lead = 1.7
+    elseif speed > 4     then lead = 1
+    else                      lead = 0
+    end
+
+    local predX = pos.X + hUnit.X * lead
+    local predZ = pos.Z + hUnit.Z * lead
+    local predY
+
+    if inAir then
+        local velY = vel.Y
+        if velY >= SPAM_JUMP_VEL then
+            local tApex = velY / GRAVITY
+            if tApex <= dt then
+                local apexY  = pos.Y + velY * tApex - 0.5 * GRAVITY * tApex * tApex
+                local fallDt = dt - tApex
+                predY = apexY - 0.5 * GRAVITY * fallDt * fallDt
+            else
+                predY = pos.Y + velY * dt - 0.5 * GRAVITY * dt * dt
+            end
+        elseif velY < 0 then
+            predY = pos.Y + velY * dt - 0.5 * GRAVITY * dt * dt
+            if predY < pos.Y - 8 then predY = pos.Y - 4 end
+        else
+            predY = pos.Y + velY * dt - 0.5 * GRAVITY * dt * dt
+        end
+    else
+        predY = pos.Y
+    end
+
+    return Vector3.new(predX, predY, predZ) + torsoOff
+end
+
 doThrowKnife = function()
     local char = lp.Character
     if not char then return end
@@ -1021,12 +1084,7 @@ doThrowKnife = function()
         nearestHRP = candidates[1].hrp
     end
     if not nearest then warn("[MurderHUD] ThrowKnife: no target found") return end
-    local vel  = nearestHRP.AssemblyLinearVelocity
-    local hVel = Vector3.new(vel.X, 0, vel.Z)
-    local aimPos = nearestHRP.Position
-    if hVel.Magnitude > 0 then
-        aimPos = aimPos + hVel.Unit * WALK_LEAD_THROW
-    end
+    local aimPos = getPredPos(nearest, nearestHRP, myHRP)
     local ok, err = pcall(function()
         throwRemote:FireServer(CFrame.new(myHRP.Position, aimPos), CFrame.new(aimPos))
     end)
