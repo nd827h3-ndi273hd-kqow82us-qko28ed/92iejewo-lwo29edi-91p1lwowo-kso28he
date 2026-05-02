@@ -1787,30 +1787,35 @@ RunService.Heartbeat:Connect(function()
             local mHRP  = mChar:FindFirstChild("HumanoidRootPart")
             local mKnife = mChar:FindFirstChild("Knife")
             if mHRP and mKnife and (mHRP.Position - hrp.Position).Magnitude <= 10 then
-                local gun = char:FindFirstChild("Gun")
-                if gun then
-                    local now = tick()
-                    if now - lpSheriffLastShot >= 0.15 then
-                        lpSheriffLastShot = now
-                        local aimPos = getAimPosition()
-                        local remote = getShootRemote()
-                        if aimPos and remote then
-                            pcall(function()
-                                remote:FireServer(CFrame.new(hrp.Position, aimPos), CFrame.new(aimPos))
-                            end)
+                rayParams.FilterDescendantsInstances = { char, mChar }
+                local los = Workspace:Raycast(hrp.Position, mHRP.Position - hrp.Position, rayParams)
+                los = not los or los.Instance:IsDescendantOf(mChar)
+                if los then
+                    local gun = char:FindFirstChild("Gun")
+                    if gun then
+                        local now = tick()
+                        if now - lpSheriffLastShot >= 0.15 then
+                            lpSheriffLastShot = now
+                            local aimPos = getAimPosition()
+                            local remote = getShootRemote()
+                            if aimPos and remote then
+                                pcall(function()
+                                    remote:FireServer(CFrame.new(hrp.Position, aimPos), CFrame.new(aimPos))
+                                end)
+                            end
                         end
-                    end
-                else
-                    local bp = lp:FindFirstChild("Backpack")
-                    local bpGun = bp and bp:FindFirstChild("Gun")
-                    if bpGun then
-                        local hum = char:FindFirstChildOfClass("Humanoid")
-                        if hum then
-                            pcall(function() hum:EquipTool(bpGun) end)
+                    else
+                        local bp = lp:FindFirstChild("Backpack")
+                        local bpGun = bp and bp:FindFirstChild("Gun")
+                        if bpGun then
+                            local hum = char:FindFirstChildOfClass("Humanoid")
+                            if hum then
+                                pcall(function() hum:EquipTool(bpGun) end)
+                            end
                         end
                     end
                 end
             end
-        wend
+        end
     end
 end)
