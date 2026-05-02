@@ -1,5 +1,5 @@
 -- LocalScript: StarterPlayerScripts
-print("V2.106.230")
+print("V2.106.232")
 if _G.__MurderHUD_Running then return end
 _G.__MurderHUD_Running = true
 
@@ -1174,7 +1174,12 @@ local function doAutofarmShoot()
         local myHRP  = myChar and myChar:FindFirstChild("HumanoidRootPart")
         if not myHRP then return end
         myHRP.Anchored = false
-        myHRP.CFrame   = CFrame.new(mHRP.Position + mHRP.CFrame.LookVector * 10, mHRP.Position)
+        local bp = lp:FindFirstChild("Backpack")
+        local hasGun = myChar:FindFirstChild("Gun") ~= nil
+            or (bp and bp:FindFirstChild("Gun") ~= nil)
+        if isLpSheriff or hasGun then
+            myHRP.CFrame = CFrame.new(mHRP.Position + mHRP.CFrame.LookVector * 10, mHRP.Position)
+        end
         local aimPos = getAimPosition() or mHRP.Position
         local remote = getShootRemote()
         if remote then
@@ -1637,6 +1642,12 @@ Workspace.DescendantAdded:Connect(function(desc)
     end)
     local lpInLobby = isInLobby(lp.Character)
     if innocentGui then innocentGui.Enabled = not isLpMurd and not lpInLobby end
+    if not isLpMurd and not isLpSheriff and not lpInLobby then
+        task.defer(function()
+            local ok2, err2 = pcall(doGrabGun)
+            if not ok2 then warn("[MurderHUD] GunDrop auto-grab: " .. tostring(err2)) end
+        end)
+    end
     local ok, err = pcall(attachGunDropHighlight, desc)
     if not ok then warn("[MurderHUD] GunDrop DescendantAdded: " .. tostring(err)) end
 end)
@@ -1646,6 +1657,10 @@ for _, desc in ipairs(Workspace:GetDescendants()) do
         gunDropped = true
         local ok, err = pcall(attachGunDropHighlight, desc)
         if not ok then warn("[MurderHUD] GunDrop startup: " .. tostring(err)) end
+        if not isLpMurd and not isLpSheriff and not isInLobby(lp.Character) then
+            local ok2, err2 = pcall(doGrabGun)
+            if not ok2 then warn("[MurderHUD] GunDrop startup grab: " .. tostring(err2)) end
+        end
     end
 end
 if gunDropped and innocentGui then
