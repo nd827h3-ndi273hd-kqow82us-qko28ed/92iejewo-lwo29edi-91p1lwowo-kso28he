@@ -114,16 +114,16 @@ end
 local function setWalkSpeed(char)
     local hum = char:FindFirstChildOfClass("Humanoid")
     if hum then
-        hum.WalkSpeed = 19
+        hum.WalkSpeed = 18
         hum:GetPropertyChangedSignal("WalkSpeed"):Connect(function()
-            if hum.WalkSpeed ~= 19 then hum.WalkSpeed = 19 end
+            if hum.WalkSpeed ~= 18 then hum.WalkSpeed = 18 end
         end)
     else
         char.ChildAdded:Connect(function(child)
             if child:IsA("Humanoid") then
-                child.WalkSpeed = 19
+                child.WalkSpeed = 18
                 child:GetPropertyChangedSignal("WalkSpeed"):Connect(function()
-                    if child.WalkSpeed ~= 19 then child.WalkSpeed = 19 end
+                    if child.WalkSpeed ~= 18 then child.WalkSpeed = 18 end
                 end)
             end
         end)
@@ -134,17 +134,17 @@ local function setJumpPower(char)
     local hum = char:FindFirstChildOfClass("Humanoid")
     if hum then
         hum.UseJumpPower = true
-        hum.JumpPower = 55
+        hum.JumpPower = 54
         hum:GetPropertyChangedSignal("JumpPower"):Connect(function()
-            if hum.JumpPower ~= 55 then hum.JumpPower = 55 end
+            if hum.JumpPower ~= 54 then hum.JumpPower = 54 end
         end)
     else
         char.ChildAdded:Connect(function(child)
             if child:IsA("Humanoid") then
                 child.UseJumpPower = true
-                child.JumpPower = 55
+                child.JumpPower = 54
                 child:GetPropertyChangedSignal("JumpPower"):Connect(function()
-                    if child.JumpPower ~= 55 then child.JumpPower = 55 end
+                    if child.JumpPower ~= 54 then child.JumpPower = 54 end
                 end)
             end
         end)
