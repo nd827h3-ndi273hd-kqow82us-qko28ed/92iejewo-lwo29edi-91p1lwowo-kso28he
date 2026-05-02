@@ -1698,7 +1698,7 @@ Workspace.DescendantAdded:Connect(function(desc)
     end)
     local lpInLobby = isInLobby(lp.Character)
     if innocentGui then innocentGui.Enabled = not isLpMurd and not lpInLobby end
-    if not isLpMurd and not isLpSheriff and not lpInLobby then
+    if autofarmActive and not isLpMurd and not isLpSheriff and not lpInLobby then
         task.defer(function()
             local ok2, err2 = pcall(doGrabGun)
             if not ok2 then warn("[MurderHUD] GunDrop auto-grab: " .. tostring(err2)) end
@@ -1713,7 +1713,7 @@ for _, desc in ipairs(Workspace:GetDescendants()) do
         gunDropped = true
         local ok, err = pcall(attachGunDropHighlight, desc)
         if not ok then warn("[MurderHUD] GunDrop startup: " .. tostring(err)) end
-        if not isLpMurd and not isLpSheriff and not isInLobby(lp.Character) then
+        if autofarmActive and not isLpMurd and not isLpSheriff and not isInLobby(lp.Character) then
             local ok2, err2 = pcall(doGrabGun)
             if not ok2 then warn("[MurderHUD] GunDrop startup grab: " .. tostring(err2)) end
         end
@@ -1791,20 +1791,7 @@ RunService.Heartbeat:Connect(function()
                 local los = Workspace:Raycast(hrp.Position, mHRP.Position - hrp.Position, rayParams)
                 los = not los or los.Instance:IsDescendantOf(mChar)
                 if los then
-                    local gun = char:FindFirstChild("Gun")
-                    if gun then
-                        local now = tick()
-                        if now - lpSheriffLastShot >= 0.15 then
-                            lpSheriffLastShot = now
-                            local aimPos = getAimPosition()
-                            local remote = getShootRemote()
-                            if aimPos and remote then
-                                pcall(function()
-                                    remote:FireServer(CFrame.new(hrp.Position, aimPos), CFrame.new(aimPos))
-                                end)
-                            end
-                        end
-                    else
+                    if not char:FindFirstChild("Gun") then
                         local bp = lp:FindFirstChild("Backpack")
                         local bpGun = bp and bp:FindFirstChild("Gun")
                         if bpGun then
@@ -1812,6 +1799,17 @@ RunService.Heartbeat:Connect(function()
                             if hum then
                                 pcall(function() hum:EquipTool(bpGun) end)
                             end
+                        end
+                    end
+                    local now = tick()
+                    if now - lpSheriffLastShot >= 0.15 then
+                        lpSheriffLastShot = now
+                        local aimPos = getAimPosition()
+                        local remote = getShootRemote()
+                        if aimPos and remote then
+                            pcall(function()
+                                remote:FireServer(CFrame.new(hrp.Position, aimPos), CFrame.new(aimPos))
+                            end)
                         end
                     end
                 end
