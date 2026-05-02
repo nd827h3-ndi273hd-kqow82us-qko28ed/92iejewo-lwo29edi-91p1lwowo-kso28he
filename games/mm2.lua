@@ -462,6 +462,7 @@ local function refreshLpMurd()
             or (bp      and bp:FindFirstChild("Knife")      ~= nil)
             or (wsModel and wsModel:FindFirstChild("Knife") ~= nil)
     if prev == isLpMurd then return end
+    if not roundActive then startRound() end
     if isLpMurd then
         for _, p in ipairs(Players:GetPlayers()) do
             lpLastActiveTime = tick()
@@ -600,7 +601,6 @@ end
 -- ── Per-player setup ──────────────────────────────────────────────────────────
 local function setupPlayer(p)
     ensureFakeHRP(p)
-    -- Watch persistent Backpack once
     local bp = p:FindFirstChild("Backpack")
     if bp then
         watchContainer(p, bp, false)
@@ -609,7 +609,7 @@ local function setupPlayer(p)
             if child.Name == "Backpack" then watchContainer(p, child, false) end
         end)
     end
-    -- Watch current character
+
     if p.Character then
         watchChar(p, p.Character)
         watchContainer(p, p.Character, false)
@@ -618,7 +618,7 @@ local function setupPlayer(p)
         applyRole(p)
         updateLpVisualFor(p)
     end
-    -- Watch future characters (new char = new round, clear sticky)
+    
     p.CharacterAdded:Connect(function(char)
         stickyRoles[p] = nil
         watchChar(p, char)
@@ -656,6 +656,7 @@ local function refreshLpSheriff()
     isLpSheriff = (char and char:FindFirstChild("Gun") ~= nil)
                or (bp   and bp:FindFirstChild("Gun")   ~= nil)
     if prev == isLpSheriff then return end
+    if isLpSheriff and not roundActive then startRound() end
     local lpInLobby = isInLobby(lp.Character)
     if innocentGui then innocentGui.Enabled = not lpInLobby and not isLpMurd and not isLpSheriff and gunDropped end
     if murderGui and lpInLobby then murderGui.Enabled = false end
@@ -1153,13 +1154,25 @@ local function waitUntilTimer(secs, guard)
 end
 
 local function doAutofarmShoot()
-    while autofarmActive and roundActive and murderer do
+    local lastShot = 0
+    local conn
+    conn = RunService.Heartbeat:Connect(function()
+        if not autofarmActive or not roundActive or not murderer then
+            conn:Disconnect()
+            local c = lp.Character
+            local h = c and c:FindFirstChild("HumanoidRootPart")
+            if h and not h.Anchored then freezeAbove(h) end
+            return
+        end
+        local now = tick()
+        if now - lastShot < 0.1 then return end
+        lastShot = now
         local mChar = murderer.Character
         local mHRP  = mChar and mChar:FindFirstChild("HumanoidRootPart")
-        if not mHRP then task.wait(0.5) continue end
+        if not mHRP then return end
         local myChar = lp.Character
         local myHRP  = myChar and myChar:FindFirstChild("HumanoidRootPart")
-        if not myHRP then task.wait(0.5) continue end
+        if not myHRP then return end
         myHRP.Anchored = false
         myHRP.CFrame   = CFrame.new(mHRP.Position + mHRP.CFrame.LookVector * 10, mHRP.Position)
         local aimPos = getAimPosition() or mHRP.Position
@@ -1169,10 +1182,7 @@ local function doAutofarmShoot()
                 remote:FireServer(CFrame.new(myHRP.Position, aimPos), CFrame.new(aimPos))
             end)
         end
-    end
-    local c = lp.Character
-    local h = c and c:FindFirstChild("HumanoidRootPart")
-    if h and not h.Anchored then freezeAbove(h) end
+    end)
 end
 
 local function stopAutofarm()
