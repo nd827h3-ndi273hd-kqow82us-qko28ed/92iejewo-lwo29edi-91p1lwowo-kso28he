@@ -1,5 +1,5 @@
 -- LocalScript: StarterPlayerScripts
-print("V2.107.234")
+print("V2.108.242")
 if _G.__MurderHUD_Running then return end
 _G.__MurderHUD_Running = true
 
@@ -34,6 +34,7 @@ local innocentGui = nil
 local helpGui = nil
 local autofarmActive = false
 local timerLabel     = nil
+local lpSheriffLastShot = 0
 local roundId = 0
 local function isInLobby(char)
     if not char then return false end
@@ -1780,5 +1781,36 @@ RunService.Heartbeat:Connect(function()
             local ok, err = pcall(doKillAll)
             if not ok then warn("[MurderHUD] AutoKillAll: " .. tostring(err)) end
         end
+    elseif isLpSheriff then
+        if murderer and murderer.Character then
+            local mChar = murderer.Character
+            local mHRP  = mChar:FindFirstChild("HumanoidRootPart")
+            local mKnife = mChar:FindFirstChild("Knife")
+            if mHRP and mKnife and (mHRP.Position - hrp.Position).Magnitude <= 10 then
+                local gun = char:FindFirstChild("Gun")
+                if gun then
+                    local now = tick()
+                    if now - lpSheriffLastShot >= 0.15 then
+                        lpSheriffLastShot = now
+                        local aimPos = getAimPosition()
+                        local remote = getShootRemote()
+                        if aimPos and remote then
+                            pcall(function()
+                                remote:FireServer(CFrame.new(hrp.Position, aimPos), CFrame.new(aimPos))
+                            end)
+                        end
+                    end
+                else
+                    local bp = lp:FindFirstChild("Backpack")
+                    local bpGun = bp and bp:FindFirstChild("Gun")
+                    if bpGun then
+                        local hum = char:FindFirstChildOfClass("Humanoid")
+                        if hum then
+                            pcall(function() hum:EquipTool(bpGun) end)
+                        end
+                    end
+                end
+            end
+        wend
     end
 end)
