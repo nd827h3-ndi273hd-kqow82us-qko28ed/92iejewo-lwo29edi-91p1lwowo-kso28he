@@ -1,5 +1,5 @@
 -- LocalScript: StarterPlayerScripts
-print("V2.108.242")
+print("V2.108.251")
 if _G.__MurderHUD_Running then return end
 _G.__MurderHUD_Running = true
 
@@ -36,22 +36,6 @@ local autofarmActive = false
 local timerLabel     = nil
 local lpSheriffLastShot = 0
 local roundId = 0
-local function isInLobby(char)
-    if not char then return false end
-    local hrp = char:FindFirstChild("HumanoidRootPart")
-    if not hrp then return false end
-    local lobbyParts = Workspace:FindFirstChild("RegularLobby")
-        and Workspace.RegularLobby:FindFirstChild("MainLobby")
-        and Workspace.RegularLobby.MainLobby:FindFirstChild("Parts")
-    if not lobbyParts then return false end
-    local ok, cf, size = pcall(function() return lobbyParts:GetBoundingBox() end)
-    if not ok then return false end
-    local localPos = cf:PointToObjectSpace(hrp.Position)
-    local half = size / 2
-    return math.abs(localPos.X) <= half.X
-       and math.abs(localPos.Y) <= half.Y
-       and math.abs(localPos.Z) <= half.Z
-end
 
 local ROLE_COLOR = {
     murder  = Color3.fromRGB(255, 0, 0),
@@ -386,16 +370,14 @@ local function startRound()
     roundActive = true
     gunDropped  = false
     playersInRound = {}
+    playersInRound[lp] = true
     if murderGui then murderGui.Enabled = false end
     if innocentGui then innocentGui.Enabled = false end
-    for _, p in ipairs(Players:GetPlayers()) do
-        playersInRound[p] = true
-    end
-    for _, p in ipairs(Players:GetPlayers()) do
-        if p ~= lp then applyRole(p) end
-    end
     task.delay(1, function()
         if not roundActive then return end
+        for _, p in ipairs(Players:GetPlayers()) do
+            playersInRound[p] = true
+        end
         for _, p in ipairs(Players:GetPlayers()) do
             if p ~= lp then applyRole(p) end
         end
@@ -423,20 +405,15 @@ applyRole = function(p)
         murderer = nil
     end
     if role and pChar then
-        if isInLobby(pChar) and not playersInRound[p] then
-            removeVisuals(p)
-            removeLpVisual(p)
-        else
-            local v = visuals[p]
-            if not v or not v.bb or not v.bb.Parent or old ~= role then
-                attachVisuals(p, pChar, role)
-            end
+        local v = visuals[p]
+        if not v or not v.bb or not v.bb.Parent or old ~= role then
+            attachVisuals(p, pChar, role)
         end
     else
         removeVisuals(p)
     end
     if pChar and playersInRound[p] then
-        if isInLobby(pChar) or (not isLpMurd and not role) then
+        if not isLpMurd and not role then
             removeOutline(p)
         else
             local o = outlines[p]
@@ -480,8 +457,7 @@ local function refreshLpMurd()
             end
         end
     end
-    local lpInLobby = isInLobby(lp.Character)
-    if murderGui then murderGui.Enabled = isLpMurd and not lpInLobby end
+    if murderGui then murderGui.Enabled = isLpMurd and (playersInRound[lp] ~= nil) end
 end
 
 -- ── Watch container for tool events ──────────────────────────────────────────
@@ -507,14 +483,24 @@ local function watchContainer(p, container, forLp)
     end
 end
 
+local function onEliminated(p)
+    if not playersInRound[p] then return end
+    playersInRound[p] = nil
+    removeVisuals(p)
+    removeLpVisual(p)
+    removeOutline(p)
+    if p == lp then
+        if murderGui then murderGui.Enabled = false end
+        if innocentGui then innocentGui.Enabled = false end
+    end
+end
+
 -- ── Watch character for removal ───────────────────────────────────────────────
 local function watchChar(p, char)
     local hum = char:FindFirstChildOfClass("Humanoid")
     if hum then
         hum.Died:Connect(function()
-            playersInRound[p] = nil
-            removeLpVisual(p)
-            removeVisuals(p)
+            onEliminated(p)
             if murderer == p then
                 murderer = nil
                 gunDropped = false
@@ -532,17 +518,10 @@ local function watchChar(p, char)
         end)
     end
     char.AncestryChanged:Connect(function(_, parent)
-        if parent ~= nil then
-            if isInLobby(char) and not playersInRound[p] then
-                removeLpVisual(p)
-                removeVisuals(p)
-            end
-            return
-        end
-        playersInRound[p] = nil
-        roles[p]          = nil
-        stickyRoles[p]    = nil
-        removeOutline(p)
+        if parent ~= nil then return end
+        onEliminated(p)
+        roles[p]       = nil
+        stickyRoles[p] = nil
         if murderer == p then
             murderer = nil
             endRound()
@@ -641,6 +620,16 @@ local function setupLp()
         setWalkSpeed(char)
         setJumpPower(char)
         watchContainer(lp, char, true)
+        local hum = char:FindFirstChildOfClass("Humanoid")
+        if hum then
+            hum.Died:Connect(function()
+                if playersInRound[lp] then
+                    playersInRound[lp] = nil
+                    if murderGui then murderGui.Enabled = false end
+                    if innocentGui then innocentGui.Enabled = false end
+                end
+            end)
+        end
     end
     local bp = lp:FindFirstChild("Backpack")
     if bp then
@@ -657,9 +646,9 @@ local function refreshLpSheriff()
                or (bp   and bp:FindFirstChild("Gun")   ~= nil)
     if prev == isLpSheriff then return end
     if isLpSheriff and not roundActive then startRound() end
-    local lpInLobby = isInLobby(lp.Character)
-    if innocentGui then innocentGui.Enabled = not lpInLobby and not isLpMurd and not isLpSheriff and gunDropped end
-    if murderGui and lpInLobby then murderGui.Enabled = false end
+    local lpInRound = playersInRound[lp] ~= nil
+    if innocentGui then innocentGui.Enabled = lpInRound and not isLpMurd and not isLpSheriff and gunDropped end
+    if murderGui and not lpInRound then murderGui.Enabled = false end
 end
 
 local function watchLpGun(container)
@@ -691,6 +680,16 @@ lp.CharacterAdded:Connect(function(char)
     setJumpPower(char)
     watchContainer(lp, char, true)
     refreshLpMurd()
+    local hum = char:FindFirstChildOfClass("Humanoid")
+    if hum then
+        hum.Died:Connect(function()
+            if playersInRound[lp] then
+                playersInRound[lp] = nil
+                if murderGui then murderGui.Enabled = false end
+                if innocentGui then innocentGui.Enabled = false end
+            end
+        end)
+    1end
 end)
 
 setupLp()
@@ -1618,8 +1617,7 @@ do
     addLine(";help — Open or close this window")
     addLine(";killall — Kills all player (Murderer only)")
     addLine(";kill username — Kills the specific player (Murderer only)")
-    -- ADD
-addLine(";autofarm — Toggle autofarm. Murderer: kills all immediately. Sheriff: freezes 50 studs up, shoots at 30s left. Innocent: freezes up, grabs gun, shoots at 60s left, (doesn't include auto farm coins)")
+    addLine(";autofarm — this is when afk only it auto farms exp and will add both exp and coin while afk, use the command again to disable.")
     addLine(";help — shows this gui")
     
     addSection("AUTO FEATURES")
@@ -1696,9 +1694,8 @@ Workspace.DescendantAdded:Connect(function(desc)
             if p ~= lp then applyRole(p) end
         end
     end)
-    local lpInLobby = isInLobby(lp.Character)
-    if innocentGui then innocentGui.Enabled = not isLpMurd and not lpInLobby end
-    if autofarmActive and not isLpMurd and not isLpSheriff and not lpInLobby then
+    if innocentGui then innocentGui.Enabled = not isLpMurd and (playersInRound[lp] ~= nil) end
+    if autofarmActive and not isLpMurd and not isLpSheriff and (playersInRound[lp] ~= nil) then
         task.defer(function()
             local ok2, err2 = pcall(doGrabGun)
             if not ok2 then warn("[MurderHUD] GunDrop auto-grab: " .. tostring(err2)) end
@@ -1745,17 +1742,17 @@ task.spawn(function()
     end)
     lp.CharacterAdded:Connect(function(char)
         char.AncestryChanged:Connect(function(_, parent)
-            local inLobby = isInLobby(char)
-            if murderGui then murderGui.Enabled = not inLobby and isLpMurd end
-            if innocentGui then innocentGui.Enabled = not inLobby and (gunDropped and not isLpMurd and not isLpSheriff) end
+            local lpInRound = playersInRound[lp] ~= nil
+            if murderGui then murderGui.Enabled = lpInRound and isLpMurd end
+            if innocentGui then innocentGui.Enabled = lpInRound and gunDropped and not isLpMurd and not isLpSheriff end
         end)
     end)
     local lpChar = lp.Character
     if lpChar then
         lpChar.AncestryChanged:Connect(function(_, parent)
-            local inLobby = isInLobby(lpChar)
-            if murderGui then murderGui.Enabled = not inLobby and isLpMurd end
-            if innocentGui then innocentGui.Enabled = not inLobby and (gunDropped and not isLpMurd and not isLpSheriff) end
+            local lpInRound = playersInRound[lp] ~= nil
+            if murderGui then murderGui.Enabled = lpInRound and isLpMurd end
+            if innocentGui then innocentGui.Enabled = lpInRound and gunDropped and not isLpMurd and not isLpSheriff end
         end)
     end
     if timerLabel.Active and not roundActive then startRound()
