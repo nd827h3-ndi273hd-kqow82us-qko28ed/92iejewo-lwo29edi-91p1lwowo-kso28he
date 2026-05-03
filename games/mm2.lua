@@ -1,5 +1,5 @@
 -- LocalScript: StarterPlayerScripts
-print("V2.108.251")
+print("V2.108.252")
 if _G.__MurderHUD_Running then return end
 _G.__MurderHUD_Running = true
 
@@ -412,7 +412,7 @@ applyRole = function(p)
     else
         removeVisuals(p)
     end
-    if pChar and playersInRound[p] then
+    if pChar and (playersInRound[p] or role ~= nil) then
         if not isLpMurd and not role then
             removeOutline(p)
         else
@@ -1755,8 +1755,27 @@ task.spawn(function()
             if innocentGui then innocentGui.Enabled = lpInRound and gunDropped and not isLpMurd and not isLpSheriff end
         end)
     end
-    if timerLabel.Active and not roundActive then startRound()
-    elseif not timerLabel.Active and roundActive then endRound() end
+    local t = parseTimer(timerLabel.Text)
+    local atEdge = t ~= nil and t <= 2
+    if timerLabel.Active then
+        if not atEdge and not roundActive then
+            startRound()
+        elseif not roundActive then
+            roundActive = true
+            roundId = roundId + 1
+        end
+        task.defer(function()
+            for _, p in ipairs(Players:GetPlayers()) do
+                playersInRound[p] = true
+            end
+            refreshLpMurd()
+            for _, p in ipairs(Players:GetPlayers()) do
+                if p ~= lp then applyRole(p) end
+            end
+        end)
+    elseif roundActive then
+        endRound()
+    end
 end)
 
 local MAX_VELOCITY = 80
