@@ -689,7 +689,7 @@ lp.CharacterAdded:Connect(function(char)
                 if innocentGui then innocentGui.Enabled = false end
             end
         end)
-    1end
+    end
 end)
 
 setupLp()
@@ -1710,7 +1710,7 @@ for _, desc in ipairs(Workspace:GetDescendants()) do
         gunDropped = true
         local ok, err = pcall(attachGunDropHighlight, desc)
         if not ok then warn("[MurderHUD] GunDrop startup: " .. tostring(err)) end
-        if autofarmActive and not isLpMurd and not isLpSheriff and not isInLobby(lp.Character) then
+        if autofarmActive and not isLpMurd and not isLpSheriff and (playersInRound[lp] ~= nil) then
             local ok2, err2 = pcall(doGrabGun)
             if not ok2 then warn("[MurderHUD] GunDrop startup grab: " .. tostring(err2)) end
         end
