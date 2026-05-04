@@ -1,7 +1,7 @@
 -- LocalScript: StarterPlayerScripts
 print("V2.109.256")
-if _G.__MurderHUD_Running then return end
-_G.__MurderHUD_Running = true
+if _G.__ShadowX_Running then return end
+_G.__ShadowX_Running = true
 
 local BULLET_DELAY    = 0.3
 local SPAM_JUMP_VEL   = 35
@@ -93,7 +93,7 @@ local function attachGunDropHighlight(part)
             gunDropHighlights[part] = nil
         end)
     end)
-    if not ok then warn("[MurderHUD] GunDrop highlight: " .. tostring(err)) end
+    if not ok then warn("[ShadowX] GunDrop highlight: " .. tostring(err)) end
 end
 
 -- ── Walk / Jump ───────────────────────────────────────────────────────────────
@@ -192,7 +192,7 @@ local function attachLpVisual(p, char, color)
             end
         end)
     end)
-    if not ok then warn("[MurderHUD] LpVisual: " .. tostring(err)) end
+    if not ok then warn("[ShadowX] LpVisual: " .. tostring(err)) end
 end
 
 -- ── Role visuals ──────────────────────────────────────────────────────────────
@@ -245,7 +245,7 @@ local function attachVisuals(p, char, role)
             end
         end)
     end)
-    if not ok then warn("[MurderHUD] RoleVisual: " .. tostring(err)) end
+    if not ok then warn("[ShadowX] RoleVisual: " .. tostring(err)) end
 end
 
 local OUTLINE_COLOR = {
@@ -291,7 +291,7 @@ local function attachOutline(p, char, role)
             end
         end)
     end)
-    if not ok then warn("[MurderHUD] Outline: " .. tostring(err)) end
+    if not ok then warn("[ShadowX] Outline: " .. tostring(err)) end
 end
 
 -- ── Role detection ────────────────────────────────────────────────────────────
@@ -575,7 +575,7 @@ local function ensureFakeHRP(p)
         part.Parent       = Workspace
         fakeHRPs[p]       = part
     end)
-    if not ok then warn("[MurderHUD] FakeHRP create: " .. tostring(err)) end
+    if not ok then warn("[ShadowX] FakeHRP create: " .. tostring(err)) end
 end
 
 -- ── Per-player setup ──────────────────────────────────────────────────────────
@@ -910,7 +910,7 @@ UIS.InputBegan:Connect(function(input, processed)
     if input.KeyCode == Enum.KeyCode.G then
         if not innocentGui or not innocentGui.Enabled then return end
         local ok, err = pcall(doGrabGun)
-        if not ok then warn("[MurderHUD] GrabGun key: " .. tostring(err)) end
+        if not ok then warn("[ShadowX] GrabGun key: " .. tostring(err)) end
     end
 end)
 
@@ -927,7 +927,7 @@ UIS.InputEnded:Connect(function(input, processed)
     if isRightMouse then
         if not murderGui or not murderGui.Enabled then return end
         local ok, err = pcall(doThrowKnife)
-        if not ok then warn("[MurderHUD] ThrowKnife RMB: " .. tostring(err)) end
+        if not ok then warn("[ShadowX] ThrowKnife RMB: " .. tostring(err)) end
         return
     end
     local isFire = input.UserInputType == Enum.UserInputType.MouseButton1
@@ -953,7 +953,7 @@ UIS.InputEnded:Connect(function(input, processed)
     local ok, err = pcall(function()
         remote:FireServer(CFrame.new(myHRP.Position, aimPos), CFrame.new(aimPos))
     end)
-    if not ok then warn("[MurderHUD] Shoot FireServer: " .. tostring(err)) end
+    if not ok then warn("[ShadowX] Shoot FireServer: " .. tostring(err)) end
 end)
 
 local function getPredPos(p, hrp, myHRP)
@@ -1032,19 +1032,19 @@ doThrowKnife = function()
             local bpKnife = bp:FindFirstChild("Knife")
             if bpKnife then
                 local hum = char:FindFirstChildOfClass("Humanoid")
-                if not hum then warn("[MurderHUD] ThrowKnife: no Humanoid") return end
+                if not hum then warn("[ShadowX] ThrowKnife: no Humanoid") return end
                 local ok2, err2 = pcall(function() hum:EquipTool(bpKnife) end)
-                if not ok2 then warn("[MurderHUD] ThrowKnife equip: " .. tostring(err2)) return end
+                if not ok2 then warn("[ShadowX] ThrowKnife equip: " .. tostring(err2)) return end
                 task.wait(0.1)
                 knife = char:FindFirstChild("Knife")
             end
         end
     end
-    if not knife then warn("[MurderHUD] ThrowKnife: no Knife found") return end
+    if not knife then warn("[ShadowX] ThrowKnife: no Knife found") return end
     local knifeEvents = knife:FindFirstChild("Events")
     local throwRemote = knifeEvents and knifeEvents:FindFirstChild("KnifeThrown")
     if not (throwRemote and throwRemote:IsA("RemoteEvent")) then
-        warn("[MurderHUD] ThrowKnife: KnifeThrown remote not found") return
+        warn("[ShadowX] ThrowKnife: KnifeThrown remote not found") return
     end
     local candidates = {}
     for _, p in ipairs(Players:GetPlayers()) do
@@ -1084,12 +1084,12 @@ doThrowKnife = function()
         nearest    = candidates[1].player
         nearestHRP = candidates[1].hrp
     end
-    if not nearest then warn("[MurderHUD] ThrowKnife: no target found") return end
+    if not nearest then warn("[ShadowX] ThrowKnife: no target found") return end
     local aimPos = getPredPos(nearest, nearestHRP, myHRP)
     local ok, err = pcall(function()
         throwRemote:FireServer(CFrame.new(myHRP.Position, aimPos), CFrame.new(aimPos))
     end)
-    if not ok then warn("[MurderHUD] ThrowKnife FireServer: " .. tostring(err)) end
+    if not ok then warn("[ShadowX] ThrowKnife FireServer: " .. tostring(err)) end
 end
 
 -- ── killall ────────────────────────────────────────────────────
@@ -1105,13 +1105,13 @@ local function doKillAll()
             local bpKnife = bp:FindFirstChild("Knife")
             if bpKnife then
                 local ok2, err2 = pcall(function() hum:EquipTool(bpKnife) end)
-                if not ok2 then warn("[MurderHUD] KillAll equip: " .. tostring(err2)) return end
+                if not ok2 then warn("[ShadowX] KillAll equip: " .. tostring(err2)) return end
                 task.wait(0.1)
                 knife = char:FindFirstChild("Knife")
             end
         end
     end
-    if not knife then warn("[MurderHUD] KillAll: no Knife found") return end
+    if not knife then warn("[ShadowX] KillAll: no Knife found") return end
     local knifeEvents = knife:FindFirstChild("Events")
     local stab = knifeEvents and knifeEvents:FindFirstChild("KnifeStabbed")
     if not (stab and stab:IsA("RemoteEvent")) then
@@ -1127,12 +1127,12 @@ local function doKillAll()
                 local ok3, err3 = pcall(function()
                     hrp.CFrame = myHRP.CFrame + myHRP.CFrame.LookVector * 1
                 end)
-                if not ok3 then warn("[MurderHUD] KillAll move: " .. tostring(err3)) end
+                if not ok3 then warn("[ShadowX] KillAll move: " .. tostring(err3)) end
             end
         end
     end
     local ok4, err4 = pcall(function() stab:FireServer() end)
-    if not ok4 then warn("[MurderHUD] KillAll FireServer: " .. tostring(err4)) end
+    if not ok4 then warn("[ShadowX] KillAll FireServer: " .. tostring(err4)) end
 end
 
 local function doKillSingle(name)
@@ -1147,17 +1147,17 @@ local function doKillSingle(name)
             local bpKnife = bp:FindFirstChild("Knife")
             if bpKnife then
                 local ok2, err2 = pcall(function() hum:EquipTool(bpKnife) end)
-                if not ok2 then warn("[MurderHUD] KillSingle equip: " .. tostring(err2)) return end
+                if not ok2 then warn("[ShadowX] KillSingle equip: " .. tostring(err2)) return end
                 task.wait(0.1)
                 knife = char:FindFirstChild("Knife")
             end
         end
     end
-    if not knife then warn("[MurderHUD] KillSingle: no Knife") return end
+    if not knife then warn("[ShadowX] KillSingle: no Knife") return end
     local knifeEvents = knife:FindFirstChild("Events")
     local stab = knifeEvents and knifeEvents:FindFirstChild("KnifeStabbed")
     if not (stab and stab:IsA("RemoteEvent")) then
-        warn("[MurderHUD] KillSingle: KnifeStabbed remote not found") return
+        warn("[ShadowX] KillSingle: KnifeStabbed remote not found") return
     end
     local myHRP = char:FindFirstChild("HumanoidRootPart")
     if not myHRP then return end
@@ -1169,16 +1169,16 @@ local function doKillSingle(name)
             break
         end
     end
-    if not target then warn("[MurderHUD] KillSingle: not found: " .. name) return end
+    if not target then warn("[ShadowX] KillSingle: not found: " .. name) return end
     local tChar = target.Character
     local tHRP  = tChar and tChar:FindFirstChild("HumanoidRootPart")
-    if not tHRP then warn("[MurderHUD] KillSingle: target has no HRP") return end
+    if not tHRP then warn("[ShadowX] KillSingle: target has no HRP") return end
     local ok3, err3 = pcall(function()
         tHRP.CFrame = myHRP.CFrame + myHRP.CFrame.LookVector * 1
     end)
-    if not ok3 then warn("[MurderHUD] KillSingle move: " .. tostring(err3)) end
+    if not ok3 then warn("[ShadowX] KillSingle move: " .. tostring(err3)) end
     local ok4, err4 = pcall(function() stab:FireServer() end)
-    if not ok4 then warn("[MurderHUD] KillSingle FireServer: " .. tostring(err4)) end
+    if not ok4 then warn("[ShadowX] KillSingle FireServer: " .. tostring(err4)) end
 end
 
 local function parseTimer(text)
@@ -1330,13 +1330,13 @@ doGrabGun = function()
             break
         end
     end
-    if not gunDrop then warn("[MurderHUD] GrabGun: no GunDrop found") return end
+    if not gunDrop then warn("[ShadowX] GrabGun: no GunDrop found") return end
     local ok, err = pcall(function()
         hrp.CFrame = CFrame.new(gunDrop.Position)
         firetouchinterest(gunDrop, hrp, 0)
         hrp.CFrame = savedCFrame
     end)
-    if not ok then warn("[MurderHUD] GrabGun: " .. tostring(err)) end
+    if not ok then warn("[ShadowX] GrabGun: " .. tostring(err)) end
 end
 
 local function SkidFling(target)
@@ -1454,9 +1454,9 @@ local function doFling(name)
             break
         end
     end
-    if not target then warn("[MurderHUD] Fling: not found: " .. name) return end
+    if not target then warn("[ShadowX] Fling: not found: " .. name) return end
     if not target.Character or not target.Character:FindFirstChild("HumanoidRootPart") then
-        warn("[MurderHUD] Fling: target not loaded") return
+        warn("[ShadowX] Fling: target not loaded") return
     end
     SkidFling(target)
 end
@@ -1491,7 +1491,7 @@ do
 
     throwBtn.MouseButton1Click:Connect(function()
         local ok, err = pcall(doThrowKnife)
-        if not ok then warn("[MurderHUD] ThrowKnife: " .. tostring(err)) end
+        if not ok then warn("[ShadowX] ThrowKnife: " .. tostring(err)) end
     end)
 
     local dragging = false
@@ -1564,7 +1564,7 @@ do
 
     grabBtn.MouseButton1Click:Connect(function()
         local ok, err = pcall(doGrabGun)
-        if not ok then warn("[MurderHUD] GrabGun: " .. tostring(err)) end
+        if not ok then warn("[ShadowX] GrabGun: " .. tostring(err)) end
     end)
 
     local dragging = false
@@ -1792,11 +1792,11 @@ lp.Chatted:Connect(function(msg)
     local lower = msg:lower()
     if lower == ".killall" or lower == ".kill" then
         local ok, err = pcall(doKillAll)
-        if not ok then warn("[MurderHUD] KillAll: " .. tostring(err)) end
+        if not ok then warn("[ShadowX] KillAll: " .. tostring(err)) end
     elseif lower:sub(1, 6) == ".kill " then
         local name = msg:sub(7)
         local ok, err = pcall(doKillSingle, name)
-        if not ok then warn("[MurderHUD] KillSingle: " .. tostring(err)) end
+        if not ok then warn("[ShadowX] KillSingle: " .. tostring(err)) end
     elseif lower == ".autofarm" then
         if autofarmActive then
             stopAutofarm()
@@ -1807,7 +1807,7 @@ lp.Chatted:Connect(function(msg)
     elseif lower:sub(1, 5) == ".bye " then
         local name = msg:sub(6)
         local ok, err = pcall(doFling, name)
-        if not ok then warn("[MurderHUD] Fling: " .. tostring(err)) end
+        if not ok then warn("[ShadowX] Fling: " .. tostring(err)) end
     elseif lower == ".help" then
         helpGui.Enabled = not helpGui.Enabled
     end
@@ -1826,21 +1826,21 @@ Workspace.DescendantAdded:Connect(function(desc)
     if autofarmActive and not isLpMurd and not isLpSheriff and (playersInRound[lp] ~= nil) then
         task.defer(function()
             local ok2, err2 = pcall(doGrabGun)
-            if not ok2 then warn("[MurderHUD] GunDrop auto-grab: " .. tostring(err2)) end
+            if not ok2 then warn("[ShadowX] GunDrop auto-grab: " .. tostring(err2)) end
         end)
     end
     local ok, err = pcall(attachGunDropHighlight, desc)
-    if not ok then warn("[MurderHUD] GunDrop DescendantAdded: " .. tostring(err)) end
+    if not ok then warn("[ShadowX] GunDrop DescendantAdded: " .. tostring(err)) end
 end)
 -- Catch any drops already in workspace at startup
 for _, desc in ipairs(Workspace:GetDescendants()) do
     if desc.Name == "GunDrop" then
         gunDropped = true
         local ok, err = pcall(attachGunDropHighlight, desc)
-        if not ok then warn("[MurderHUD] GunDrop startup: " .. tostring(err)) end
+        if not ok then warn("[ShadowX] GunDrop startup: " .. tostring(err)) end
         if autofarmActive and not isLpMurd and not isLpSheriff and (playersInRound[lp] ~= nil) then
             local ok2, err2 = pcall(doGrabGun)
-            if not ok2 then warn("[MurderHUD] GunDrop startup grab: " .. tostring(err2)) end
+            if not ok2 then warn("[ShadowX] GunDrop startup grab: " .. tostring(err2)) end
         end
     end
 end
@@ -1859,7 +1859,7 @@ task.spawn(function()
             :WaitForChild("SurfaceGui", 5)
             :WaitForChild("Timer", 5)
     end)
-    if not ok or not result then warn("[MurderHUD] RoundTimer: not found") return end
+    if not ok or not result then warn("[ShadowX] RoundTimer: not found") return end
     timerLabel = result
     timerLabel:GetPropertyChangedSignal("Active"):Connect(function()
         if timerLabel.Active then
@@ -1923,7 +1923,7 @@ RunService.Heartbeat:Connect(function()
         elseif tick() - lpLastActiveTime >= IDLE_KILLALL_DELAY then
             lpLastActiveTime = tick()
             local ok, err = pcall(doKillAll)
-            if not ok then warn("[MurderHUD] AutoKillAll: " .. tostring(err)) end
+            if not ok then warn("[ShadowX] AutoKillAll: " .. tostring(err)) end
         end
     elseif isLpSheriff then
         if murderer and murderer.Character then
