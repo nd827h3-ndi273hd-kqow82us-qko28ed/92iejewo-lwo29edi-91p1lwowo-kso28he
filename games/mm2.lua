@@ -818,10 +818,10 @@ local function getAimPosition()
         return target
     end
 
-    local LEAD_VFAST  = 4.9
-    local LEAD_FAST  = 4.7
-    local LEAD_SLOW  = 2.6
-    local LEAD_SSLOW  = 1.7
+    local LEAD_VFAST  = 4.8
+    local LEAD_FAST  = 4.6
+    local LEAD_SLOW  = 2.5
+    local LEAD_SSLOW  = 1.5
     local LEAD_VSLOW = 1
 
     local hUnit = hVel.Magnitude > 0 and hVel.Unit or Vector3.zero
