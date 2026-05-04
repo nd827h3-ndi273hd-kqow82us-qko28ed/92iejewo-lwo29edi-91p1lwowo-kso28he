@@ -1,5 +1,5 @@
 -- LocalScript: StarterPlayerScripts
-print("V2.108.252")
+print("V2.109.256")
 if _G.__MurderHUD_Running then return end
 _G.__MurderHUD_Running = true
 
@@ -13,6 +13,7 @@ local RunService = game:GetService("RunService")
 local Workspace = game:GetService("Workspace")
 local UIS = game:GetService("UserInputService")
 local GRAVITY         = workspace.Gravity
+local origFPDH = workspace.FallenPartsDestroyHeight
 
 local lp = Players.LocalPlayer
 
@@ -343,12 +344,12 @@ local function endRound()
     if innocentGui then innocentGui.Enabled = false end
     gunDropped = false
     murderer = nil
+    for p in pairs(outlines) do removeOutline(p) end
     local thisId = roundId
     task.delay(15, function()
         if roundId ~= thisId then return end
         for p in pairs(visuals) do removeVisuals(p) end
         for p in pairs(lpVisuals) do removeLpVisual(p) end
-        for p in pairs(outlines) do removeOutline(p) end
         roles = {}
         stickyRoles = {}
     end)
@@ -1338,6 +1339,128 @@ doGrabGun = function()
     if not ok then warn("[MurderHUD] GrabGun: " .. tostring(err)) end
 end
 
+local function SkidFling(target)
+    local char = lp.Character
+    local hum  = char and char:FindFirstChildOfClass("Humanoid")
+    local hrp  = hum and hum.RootPart
+    if not (char and hum and hrp) then return end
+
+    local tChar  = target.Character
+    if not tChar then return end
+    local tHum   = tChar:FindFirstChildOfClass("Humanoid")
+    local tHRP   = tHum and tHum.RootPart
+    local tHead  = tChar:FindFirstChild("Head")
+    local acc    = tChar:FindFirstChildOfClass("Accessory")
+    local handle = acc and acc:FindFirstChild("Handle")
+
+    if tHum and tHum.Sit then return end
+    if not tChar:FindFirstChildWhichIsA("BasePart") then return end
+
+    local oldPos = hrp.Velocity.Magnitude < 50 and hrp.CFrame or hrp.CFrame
+
+    if tHead then
+        workspace.CurrentCamera.CameraSubject = tHead
+    elseif handle then
+        workspace.CurrentCamera.CameraSubject = handle
+    elseif tHum then
+        workspace.CurrentCamera.CameraSubject = tHum
+    end
+
+    local function fPos(bp, pos, ang)
+        hrp.CFrame = CFrame.new(bp.Position) * pos * ang
+        char:SetPrimaryPartCFrame(CFrame.new(bp.Position) * pos * ang)
+        hrp.Velocity    = Vector3.new(9e7, 9e7 * 10, 9e7)
+        hrp.RotVelocity = Vector3.new(9e8, 9e8, 9e8)
+    end
+
+    local function sfPart(bp)
+        local t0  = tick()
+        local ang = 0
+        repeat
+            if not (hrp and tHum) then break end
+            if bp.Velocity.Magnitude < 50 then
+                ang = ang + 100
+                fPos(bp, CFrame.new(0,  1.5, 0) + tHum.MoveDirection * bp.Velocity.Magnitude / 1.25, CFrame.Angles(math.rad(ang), 0, 0)) task.wait()
+                fPos(bp, CFrame.new(0, -1.5, 0) + tHum.MoveDirection * bp.Velocity.Magnitude / 1.25, CFrame.Angles(math.rad(ang), 0, 0)) task.wait()
+                fPos(bp, CFrame.new( 2.25,  1.5, -2.25) + tHum.MoveDirection * bp.Velocity.Magnitude / 1.25, CFrame.Angles(math.rad(ang), 0, 0)) task.wait()
+                fPos(bp, CFrame.new(-2.25, -1.5,  2.25) + tHum.MoveDirection * bp.Velocity.Magnitude / 1.25, CFrame.Angles(math.rad(ang), 0, 0)) task.wait()
+                fPos(bp, CFrame.new(0,  1.5, 0) + tHum.MoveDirection, CFrame.Angles(math.rad(ang), 0, 0)) task.wait()
+                fPos(bp, CFrame.new(0, -1.5, 0) + tHum.MoveDirection, CFrame.Angles(math.rad(ang), 0, 0)) task.wait()
+            else
+                local tVel = tHRP and tHRP.Velocity.Magnitude or bp.Velocity.Magnitude
+                fPos(bp, CFrame.new(0,  1.5,  tHum.WalkSpeed),  CFrame.Angles(math.rad(90), 0, 0)) task.wait()
+                fPos(bp, CFrame.new(0, -1.5, -tHum.WalkSpeed),  CFrame.Angles(0, 0, 0))            task.wait()
+                fPos(bp, CFrame.new(0,  1.5,  tHum.WalkSpeed),  CFrame.Angles(math.rad(90), 0, 0)) task.wait()
+                fPos(bp, CFrame.new(0,  1.5,  tVel / 1.25), CFrame.Angles(math.rad(90), 0, 0)) task.wait()
+                fPos(bp, CFrame.new(0, -1.5, -tVel / 1.25), CFrame.Angles(0, 0, 0))            task.wait()
+                fPos(bp, CFrame.new(0,  1.5,  tVel / 1.25), CFrame.Angles(math.rad(90), 0, 0)) task.wait()
+                fPos(bp, CFrame.new(0, -1.5, 0), CFrame.Angles(math.rad(90),  0, 0)) task.wait()
+                fPos(bp, CFrame.new(0, -1.5, 0), CFrame.Angles(0, 0, 0))             task.wait()
+                fPos(bp, CFrame.new(0, -1.5, 0), CFrame.Angles(math.rad(-90), 0, 0)) task.wait()
+                fPos(bp, CFrame.new(0, -1.5, 0), CFrame.Angles(0, 0, 0))             task.wait()
+            end
+        until bp.Velocity.Magnitude > 500
+            or bp.Parent ~= tChar
+            or target.Parent ~= Players
+            or tHum.Sit
+            or hum.Health <= 0
+            or tick() > t0 + 2
+    end
+
+    workspace.FallenPartsDestroyHeight = 0/0
+
+    local bv = Instance.new("BodyVelocity")
+    bv.Name     = "FlingVel"
+    bv.Parent   = hrp
+    bv.Velocity = Vector3.new(9e8, 9e8, 9e8)
+    bv.MaxForce = Vector3.new(1/0, 1/0, 1/0)
+
+    hum:SetStateEnabled(Enum.HumanoidStateType.Seated, false)
+
+    if tHRP and tHead then
+        if (tHRP.CFrame.p - tHead.CFrame.p).Magnitude > 5 then sfPart(tHead)
+        else sfPart(tHRP) end
+    elseif tHRP  then sfPart(tHRP)
+    elseif tHead then sfPart(tHead)
+    elseif handle then sfPart(handle)
+    end
+
+    bv:Destroy()
+    hum:SetStateEnabled(Enum.HumanoidStateType.Seated, true)
+    workspace.CurrentCamera.CameraSubject = hum
+
+    repeat
+        hrp.CFrame = oldPos * CFrame.new(0, 0.5, 0)
+        char:SetPrimaryPartCFrame(oldPos * CFrame.new(0, 0.5, 0))
+        hum:ChangeState("GettingUp")
+        for _, v in ipairs(char:GetChildren()) do
+            if v:IsA("BasePart") then
+                v.Velocity    = Vector3.new()
+                v.RotVelocity = Vector3.new()
+            end
+        end
+        task.wait()
+    until (hrp.Position - oldPos.p).Magnitude < 25
+
+    workspace.FallenPartsDestroyHeight = origFPDH
+end
+
+local function doFling(name)
+    local low = name:lower()
+    local target = nil
+    for _, p in ipairs(Players:GetPlayers()) do
+        if p ~= lp and p.Name:lower():find(low, 1, true) then
+            target = p
+            break
+        end
+    end
+    if not target then warn("[MurderHUD] Fling: not found: " .. name) return end
+    if not target.Character or not target.Character:FindFirstChild("HumanoidRootPart") then
+        warn("[MurderHUD] Fling: target not loaded") return
+    end
+    SkidFling(target)
+end
+
 -- ── Murder GUI ────────────────────────────────────────────────────────────────
 do
     local gui = Instance.new("ScreenGui")
@@ -1614,11 +1737,12 @@ do
     addLine("Grab Gun — Shown when the gun is dropped and you are innocent (not Sheriff). Tap or press G to teleport to the gun and pick it up.")
 
     addSection("CHAT COMMANDS")
-    addLine(";help — Open or close this window")
-    addLine(";killall — Kills all player (Murderer only)")
-    addLine(";kill username — Kills the specific player (Murderer only)")
-    addLine(";autofarm — this is when afk only it auto farms exp and will add both exp and coin while afk, use the command again to disable.")
-    addLine(";help — shows this gui")
+    addLine(".help — Open or close this window")
+    addLine(".killall — Kills all player (Murderer only)")
+    addLine(".kill username — Kills the specific player (Murderer only)")
+    addLine(".bye username — flings a user")
+    addLine(".autofarm — this is when afk only it auto farms exp and will add both exp and coin while afk, use the command again to disable.")
+    addLine(".help — shows this gui")
     
     addSection("AUTO FEATURES")
     addLine("Walk speed is locked to 19. (org. 17)")
@@ -1666,21 +1790,25 @@ end
 
 lp.Chatted:Connect(function(msg)
     local lower = msg:lower()
-    if lower == ";killall" or lower == ";kill" then
+    if lower == ".killall" or lower == ".kill" then
         local ok, err = pcall(doKillAll)
         if not ok then warn("[MurderHUD] KillAll: " .. tostring(err)) end
-    elseif lower:sub(1, 6) == ";kill " then
+    elseif lower:sub(1, 6) == ".kill " then
         local name = msg:sub(7)
         local ok, err = pcall(doKillSingle, name)
         if not ok then warn("[MurderHUD] KillSingle: " .. tostring(err)) end
-    elseif lower == ";autofarm" then
+    elseif lower == ".autofarm" then
         if autofarmActive then
             stopAutofarm()
         else
             autofarmActive = true
             runAutofarm()
         end
-    elseif lower == ";help" then
+    elseif lower:sub(1, 5) == ".bye " then
+        local name = msg:sub(6)
+        local ok, err = pcall(doFling, name)
+        if not ok then warn("[MurderHUD] Fling: " .. tostring(err)) end
+    elseif lower == ".help" then
         helpGui.Enabled = not helpGui.Enabled
     end
 end)
