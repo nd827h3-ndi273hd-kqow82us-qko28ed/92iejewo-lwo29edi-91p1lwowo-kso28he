@@ -896,8 +896,16 @@ local function getAimPosition()
                 predY = pos.Y + velY * dt - 0.5 * GRAVITY * dt * dt
             end
         elseif velY < 0 then
-            predY = pos.Y + velY * dt - 0.5 * GRAVITY * dt * dt
-            if predY < pos.Y - 8 then predY = pos.Y - 4 end
+            rayParams.FilterDescendantsInstances = { myChar, char }
+            local floorHit = Workspace:Raycast(pos, Vector3.new(0, -20, 0), rayParams)
+            local floorDist = floorHit and floorHit.Distance or 999
+            if floorDist <= 3 then
+                predY = pos.Y
+            elseif floorDist <= 6 then
+                predY = pos.Y - 2
+            else
+                predY = pos.Y - 4
+            end
         else
             predY = pos.Y + velY * dt - 0.5 * GRAVITY * dt * dt
         end
