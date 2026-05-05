@@ -1885,7 +1885,7 @@ do
     addLine(".help — Open this window")
     addLine(".killall — Kills all players (Murderer only)")
     addLine(".kill username — Kills the target player (Murderer only)")
-    addLine(".bye username — Flings the target)
+    addLine(".bye username — Flings the target")q
     addLine(".autofarm — Auto farms exp while AFK. Use again to disable.")
     addLine(".shootmurd — Shoots the murder if hiding or else (No need to use just to shoot this command is just used to kill murder that was hiding or exploiting flying.)")
     addLine(".tp username — Teleports you to the target, partial name supports ex. .tp jv full user is jvpogi233j)
