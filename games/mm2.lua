@@ -1,4 +1,4 @@
-print("V2.112.260")
+print("V2.112.261")
 if _G.__ShadowX_Running then return end
 _G.__ShadowX_Running = true
 
@@ -318,7 +318,7 @@ local function updateLpVisualFor(p)
     local pChar = p.Character
     if not pChar then removeLpVisual(p) return end
     local role = roles[p]
-    if role == "murder" then removeLpVisual(p) return end
+    if role == "murder" or role == "hero" then removeLpVisual(p) return end
     local lpColor = role == "sheriff" and LP_COLOR.sheriff or LP_COLOR.norole
     local lv = lpVisuals[p]
     if not lv or lv.color ~= lpColor then
@@ -1041,11 +1041,11 @@ local function getPredPos(p, hrp, myHRP)
 
     local hUnit = speed > 0 and hVel.Unit or Vector3.zero
     local lead
-    if     speed >= 17.5 then lead = 4.9
-    elseif speed >= 15.8 then lead = 4.7
-    elseif speed >= 11   then lead = 2.6
+    if     speed >= 17.5 then lead = 5
+    elseif speed >= 15.8 then lead = 4.8
+    elseif speed >= 11   then lead = 2.7
     elseif speed > 8     then lead = 1.7
-    elseif speed > 4     then lead = 1
+    elseif speed > 4     then lead = 1.1
     else                      lead = 0
     end
 
