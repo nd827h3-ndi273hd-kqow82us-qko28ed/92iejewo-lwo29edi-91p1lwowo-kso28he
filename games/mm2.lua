@@ -1,4 +1,4 @@
-print("V2.111.258")
+print("V2.112.259")
 if _G.__ShadowX_Running then return end
 _G.__ShadowX_Running = true
 
@@ -913,7 +913,38 @@ local function getAimPosition()
             return cPos
         end
     end
-
+    -- << DEBUG_AIM (delete from here to >> DEBUG_AIM to remove)
+    do
+        local wallCnt = 0
+        for i = 1, #candidates do
+            local d = candidates[i] - myHRP.Position
+            local h = Workspace:Raycast(myHRP.Position, d, rayParams)
+            if h and not h.Instance:IsDescendantOf(char) then
+                wallCnt = wallCnt + 1
+            end
+        end
+        local spd   = hVel.Magnitude
+        local cause
+        if wallCnt >= 3 then
+            cause = "wall(all-blocked)"
+        elseif wallCnt > 0 then
+            cause = "wall(partial," .. wallCnt .. "/3)"
+        elseif inAir and vel.Y > 10 then
+            cause = "air-rising(y-pred-may-overshoot)"
+        elseif inAir and vel.Y < -5 then
+            cause = "air-falling(y-pred-may-undershoot)"
+        elseif spd > 17 then
+            cause = "high-spd(lead-may-short,cur=" .. string.format("%.2f", lead) .. ")"
+        elseif spd > 10 then
+            cause = "mid-spd(lead-check,cur=" .. string.format("%.2f", lead) .. ")"
+        elseif spd > 4 then
+            cause = "slow-spd(lead-may-excess)"
+        else
+            cause = "near-still(bug?)"
+        end
+        print(("[AIM-MISS?] spd=%.1f lead=%.2f inAir=%s cause=%s"):format(
+            spd, lead, tostring(inAir), cause))
+    end
     return candidates[1]
 end
 
@@ -1858,7 +1889,6 @@ do
     addLine(".autofarm — Auto farms exp while AFK. Use again to disable.")
     addLine(".shootmurd — Shoots the murder if hiding or else (No need to use just to shoot this command is just used to kill murder that was hiding or exploiting flying.)")
     addLine(".tp username — Teleports you to the target, partial name supports ex. .tp jv full user is jvpogi233j)
-    addLine(".(itemname) or .(item1,item2) — Value of an item searcher.")
 
     addSection("AUTO FEATURES")
     addLine("Walk speed is locked to 19. (org. 17)")
