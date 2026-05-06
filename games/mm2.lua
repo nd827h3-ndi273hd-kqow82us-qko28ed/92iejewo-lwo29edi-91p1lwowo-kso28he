@@ -1434,7 +1434,7 @@ local function SkidFling(target)
     end
 
     local function fPos(bp, pos, ang)
-        hrp.CFrame      = CFrame.new(bp.Position) * pos * ang
+        hum:MoveTo((CFrame.new(bp.Position) * pos * ang).Position)
         hrp.Velocity    = Vector3.new(9e7, 9e7 * 10, 9e7)
         hrp.RotVelocity = Vector3.new(9e8, 9e8, 9e8)
     end
