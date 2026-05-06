@@ -1,4 +1,4 @@
-print("V2.114.266")
+print("V2.114.267")
 if _G.__ShadowX_Running then return end
 _G.__ShadowX_Running = true
 
@@ -55,7 +55,7 @@ local function isInLobby()
     if not hrp then return false end
     local lpart = getLobbyPart()
     if not lpart then return false end
-    return (hrp.Position - lpart.Position).Magnitude <= 70
+    return (hrp.Position - lpart.Position).Magnitude <= 50
 end
 
 local ROLE_COLOR = {
