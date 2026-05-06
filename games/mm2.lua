@@ -1,4 +1,4 @@
-print("V2.114.267")
+print("V2.114.268")
 if _G.__ShadowX_Running then return end
 _G.__ShadowX_Running = true
 
@@ -1422,7 +1422,7 @@ end
 local function runAutofarm()
     task.spawn(function()
         while autofarmActive do
-            if isInLobby() then stopAutofarm() break end
+            if isInLobby() then return end
             if not roundActive then task.wait(1) continue end
             local char = lp.Character
             local hrp  = char and char:FindFirstChild("HumanoidRootPart")
@@ -1436,14 +1436,19 @@ local function runAutofarm()
                 task.wait(0.5)
             end
 
-            local servers = getCoinServers()
             while autofarmActive and roundActive do
                 local dt = RunService.Heartbeat:Wait()
-                local h = lp.Character and lp.Character:FindFirstChild("HumanoidRootPart")
+                local c = lp.Character
+                local h = c and c:FindFirstChild("HumanoidRootPart")
                 if not h then break end
+                if c then
+                    for _, v in ipairs(c:GetDescendants()) do
+                        if v:IsA("BasePart") then v.CanCollide = false end
+                    end
+                end
                 local nearest = nil
                 local nearDist = math.huge
-                for _, cs in ipairs(servers) do
+                for _, cs in ipairs(getCoinServers()) do
                     if cs.Parent and coinHasVisual(cs) then
                         local d = (cs.Position - h.Position).Magnitude
                         if d < nearDist then nearest = cs nearDist = d end
@@ -2309,7 +2314,6 @@ RunService.Heartbeat:Connect(function()
         hrp.AssemblyLinearVelocity = vel.Unit * MAX_VELOCITY
     end
     if isInLobby() then
-        if autofarmActive then stopAutofarm() end
         if murderGui and murderGui.Enabled then murderGui.Enabled = false end
         if innocentGui and innocentGui.Enabled then innocentGui.Enabled = false end
         return
