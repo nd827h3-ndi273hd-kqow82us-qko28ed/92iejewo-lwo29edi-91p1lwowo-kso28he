@@ -1419,43 +1419,46 @@ local function runAutofarm()
                 task.wait(0.5)
             end
 
+            local servers = getCoinServers()
             while autofarmActive and roundActive do
-                local myC = lp.Character
-                local myH = myC and myC:FindFirstChild("HumanoidRootPart")
-                if not myH then break end
-                local servers = getCoinServers()
-                if #servers == 0 then break end
-                local pending = {}
+                local h = lp.Character and lp.Character:FindFirstChild("HumanoidRootPart")
+                if not h then break end
+                local cur = nil
+                local curDist = math.huge
                 for _, cs in ipairs(servers) do
-                    if coinHasVisual(cs) then table.insert(pending, cs) end
+                    if cs.Parent and coinHasVisual(cs) then
+                        local d = (cs.Position - h.Position).Magnitude
+                        if d < curDist then cur = cs curDist = d end
+                    end
                 end
-                if #pending == 0 then break end
-                table.sort(pending, function(a, b)
-                    local h2 = lp.Character and lp.Character:FindFirstChild("HumanoidRootPart")
-                    if not h2 then return false end
-                    return (a.Position - h2.Position).Magnitude < (b.Position - h2.Position).Magnitude
-                end)
+                if not cur then break end
                 while autofarmActive and roundActive do
-                    local myC2 = lp.Character
-                    local myH2 = myC2 and myC2:FindFirstChild("HumanoidRootPart")
-                    if not myH2 then break end
+                    local dt = RunService.Heartbeat:Wait()
+                    local h2 = lp.Character and lp.Character:FindFirstChild("HumanoidRootPart")
+                    if not h2 then break end
                     local nearest = nil
                     local nearDist = math.huge
-                    for _, cs2 in ipairs(getCoinServers()) do
-                        if coinHasVisual(cs2) then
-                            local d = (cs2.Position - myH2.Position).Magnitude
-                            if d < nearDist then nearest = cs2 nearDist = d end
+                    for _, cs in ipairs(servers) do
+                        if cs.Parent and coinHasVisual(cs) then
+                            local d = (cs.Position - h2.Position).Magnitude
+                            if d < nearDist then nearest = cs nearDist = d end
                         end
                     end
                     if not nearest then break end
-                    tweenHRP(nearest.Position, 50)
-                    if not autofarmActive or not roundActive then break end
-                    task.wait(0.1)
-                    local myC3 = lp.Character
-                    local myH3 = myC3 and myC3:FindFirstChild("HumanoidRootPart")
-                    if myH3 then pcall(firetouchinterest, nearest, myH3, 0) end
+                    if nearDist <= 4 then
+                        task.wait(0.1)
+                        local h3 = lp.Character and lp.Character:FindFirstChild("HumanoidRootPart")
+                        if h3 then pcall(firetouchinterest, nearest, h3, 0) end
+                        break
+                    end
+                    local step = 50 * dt
+                    local dir = nearest.Position - h2.Position
+                    if dir.Magnitude <= step then
+                        h2.CFrame = CFrame.new(nearest.Position)
+                    else
+                        h2.CFrame = CFrame.new(h2.Position + dir.Unit * step)
+                    end
                 end
-                task.wait(0.1)
             end
 
             if not autofarmActive then break end
