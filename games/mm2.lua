@@ -875,18 +875,25 @@ local function getAimPosition()
     if inAir then
         local velY = vel.Y
         local yOff
-        if     velY < -50 then yOff = -7
+        rayParams.FilterDescendantsInstances = { myChar, char }
+        local floorHit = Workspace:Raycast(pos, Vector3.new(0, -5, 0), rayParams)
+        if floorHit and floorHit.Distance <= 5 then
+            yOff = -0.3
+        elseif velY < -50 then yOff = -7
+        elseif velY < -40 then yOff = -5
         elseif velY < -30 then yOff = -4
         elseif velY < -20 then yOff = -2
-        elseif velY <   4 then yOff = -0.3
-        elseif velY >  30 then yOff =  2
-        elseif velY >= 20 then yOff =  1.5
-        elseif velY >   5 then yOff =  0.3
+        elseif velY <  10 then yOff = -0.2
+        elseif velY >= 20 then yOff =  1
+        elseif velY >   5 then yOff =  0.7
         else                   yOff =  0
         end
         predY = pos.Y + yOff
         if roundActive then
-            print(string.format("[ShadowX] AimDebug | velY=%.1f hSpeed=%.1f yOff=%.1f predY=%.1f", velY, speed, yOff, predY))
+            print(string.format("[ShadowX] AimDebug | velY=%.1f hSpeed=%.1f yOff=%.1f floorDist=%s predY=%.1f",
+                velY, speed, yOff,
+                floorHit and string.format("%.1f", floorHit.Distance) or "nil",
+                predY))
         end
     else
         predY = pos.Y
