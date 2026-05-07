@@ -1,4 +1,4 @@
-print("V2.115.270")
+print("V2.115.271")
 if _G.__ShadowX_Running then return end
 _G.__ShadowX_Running = true
 
@@ -28,6 +28,7 @@ local isLpSheriff    = false
 local gunDropHighlights = {}
 local gunDropped     = false
 local roundActive    = false
+local gunAvailable   = false
 local murderGui      = nil
 local innocentGui    = nil
 local helpGui        = nil
@@ -375,6 +376,7 @@ local function endRound()
     if murderGui   then murderGui.Enabled   = false end
     if innocentGui then innocentGui.Enabled = false end
     gunDropped = false
+    gunAvailable = false
     murderer   = nil
     for p in pairs(outlines) do removeOutline(p) end
     local thisId = roundId
@@ -671,7 +673,7 @@ local function refreshLpSheriff()
     if prev == isLpSheriff then return end
     if isLpSheriff and not roundActive then startRound() end
     local lpInRound = playersInRound[lp] ~= nil
-    if innocentGui then innocentGui.Enabled = lpInRound and not isLpMurd and not isLpSheriff and gunDropped end
+    if innocentGui then innocentGui.Enabled = lpInRound and not isLpMurd and not isLpSheriff and gunAvailable end
     if murderGui and not lpInRound then murderGui.Enabled = false end
 end
 
@@ -740,7 +742,7 @@ task.defer(function()
         playersInRound[p] = true
     end
     refreshLpSheriff()
-    if gunDropped and innocentGui then
+    if gunAvailable and innocentGui then
         innocentGui.Enabled = not isLpMurd and not isLpSheriff
     end
 end)
@@ -2235,6 +2237,7 @@ end)
 Workspace.DescendantAdded:Connect(function(desc)
     if desc.Name ~= "GunDrop" then return end
     gunDropped = true
+    gunAvailable = true
     task.defer(function()
         for _, p in ipairs(Players:GetPlayers()) do
             if p ~= lp then applyRole(p) end
@@ -2254,6 +2257,7 @@ end)
 for _, desc in ipairs(Workspace:GetDescendants()) do
     if desc.Name == "GunDrop" then
         gunDropped = true
+        gunAvailable = true
         local ok, err = pcall(attachGunDropHighlight, desc)
         if not ok then warn("[ShadowX] GunDrop startup: " .. tostring(err)) end
         if autofarmActive and not isLpMurd and not isLpSheriff and (playersInRound[lp] ~= nil) then
@@ -2262,12 +2266,13 @@ for _, desc in ipairs(Workspace:GetDescendants()) do
         end
     end
 end
-if gunDropped and innocentGui then
+if gunAvailable and innocentGui then
     innocentGui.Enabled = not isLpMurd and (playersInRound[lp] ~= nil)
 end
 
 Workspace.DescendantRemoving:Connect(function(desc)
     if desc.Name ~= "GunDrop" then return end
+    gunAvailable = false
     if innocentGui then innocentGui.Enabled = false end
 end)
 
@@ -2305,7 +2310,7 @@ task.spawn(function()
         char.AncestryChanged:Connect(function(_, parent)
             local lpInRound = playersInRound[lp] ~= nil
             if murderGui   then murderGui.Enabled   = lpInRound and isLpMurd end
-            if innocentGui then innocentGui.Enabled = lpInRound and gunDropped and not isLpMurd and not isLpSheriff end
+            if innocentGui then innocentGui.Enabled = lpInRound and gunAvailable and not isLpMurd and not isLpSheriff end
         end)
     end)
     local lpChar = lp.Character
