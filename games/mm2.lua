@@ -1936,7 +1936,7 @@ task.spawn(function()
             if obj.Name == "Part" and obj:IsA("BasePart") and obj.Size ~= Vector3.new(4, 4, 4) then
                 obj.Size = Vector3.new(4, 4, 4)
                 found = found + 1
-                print("f.")2
+                print("f.")
             end
         end
     end
