@@ -1,4 +1,4 @@
-print("V2.118.274")
+print("V2.118.275")
 if _G.__ShadowX_Running then return end
 _G.__ShadowX_Running = true
 
@@ -874,24 +874,19 @@ local function getAimPosition()
 
     if inAir then
         local velY = vel.Y
-        if velY >= SPAM_JUMP_VEL then
-            local tApex = velY / GRAVITY
-            if tApex <= dt then
-                local apexY  = pos.Y + velY * tApex - 0.5 * GRAVITY * tApex * tApex
-                local fallDt = dt - tApex
-                predY = apexY - 0.5 * GRAVITY * fallDt * fallDt
-            else
-                predY = pos.Y + velY * dt - 0.5 * GRAVITY * dt * dt
-            end
-        elseif velY < 0 then
-            rayParams.FilterDescendantsInstances = { myChar, char }
-            local floorHit  = Workspace:Raycast(pos, Vector3.new(0, -20, 0), rayParams)
-            local floorDist = floorHit and floorHit.Distance or 999
-            predY = floorDist <= 3 and pos.Y
-                 or floorDist <= 6 and pos.Y - 2
-                 or pos.Y - 4
-        else
-            predY = pos.Y + velY * dt - 0.5 * GRAVITY * dt * dt
+        local yOff
+        if     velY < -50 then yOff = -7
+        elseif velY < -30 then yOff = -4
+        elseif velY < -20 then yOff = -2
+        elseif velY <   4 then yOff = -0.3
+        elseif velY >  30 then yOff =  2
+        elseif velY >= 20 then yOff =  1.5
+        elseif velY >   5 then yOff =  0.3
+        else                   yOff =  0
+        end
+        predY = pos.Y + yOff
+        if roundActive then
+            print(string.format("[ShadowX] AimDebug | velY=%.1f hSpeed=%.1f yOff=%.1f predY=%.1f", velY, speed, yOff, predY))
         end
     else
         predY = pos.Y
