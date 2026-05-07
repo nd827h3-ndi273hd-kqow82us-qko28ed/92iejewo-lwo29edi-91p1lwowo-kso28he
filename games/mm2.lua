@@ -1,4 +1,4 @@
-print("V2.115.269")
+print("V2.115.270")
 if _G.__ShadowX_Running then return end
 _G.__ShadowX_Running = true
 
@@ -39,9 +39,11 @@ local smActive       = false
 local afPlatform = nila
 local smLastPos      = nil
 local knifeSpeedBuf  = {}
+local fbConn = nil
 local KNIFE_SPEED_CAP = 10
 local KNIFE_SPEED_DEF = 120
-local FAKE_BOMB_Y_OFFSET = 3.2
+local FAKE_BOMB_Y_OFFSET = 3.5
+local FAKE_BOMB_APEX_VEL = 4
 
 local function getLobbyPart()
     local ok, p = pcall(function()
@@ -1040,7 +1042,22 @@ end
 UIS.JumpRequest:Connect(function()
     local char = lp.Character
     if not char or not char:FindFirstChild("FakeBomb") then return end
-    task.delay(0.2, doFakeBomb)
+    local hrp = char:FindFirstChild("HumanoidRootPart")
+    if not hrp then return end
+    if fbConn then fbConn:Disconnect() fbConn = nil end
+    local rising = false
+    local t0 = tick()
+    fbConn = RunService.Heartbeat:Connect(function()
+        if lp.Character ~= char or tick() - t0 > 3 then
+            fbConn:Disconnect() fbConn = nil return
+        end
+        local velY = hrp.AssemblyLinearVelocity.Y
+        if not rising and velY > 10 then rising = true end
+        if rising and velY <= FAKE_BOMB_APEX_VEL then
+            fbConn:Disconnect() fbConn = nil
+            doFakeBomb()
+        end
+    end)
 end)
 
 local doThrowKnife
