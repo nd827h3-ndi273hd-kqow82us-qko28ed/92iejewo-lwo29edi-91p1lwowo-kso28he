@@ -1,4 +1,4 @@
-print("V2.117.272")
+print("V2.118.273")
 if _G.__ShadowX_Running then return end
 _G.__ShadowX_Running = true
 
@@ -1927,6 +1927,13 @@ for _, desc in ipairs(Workspace:GetDescendants()) do
         if not ok then warn("[ShadowX] GunDrop startup: " .. tostring(err)) end
     end
 end
+
+for _, obj in ipairs(Workspace:GetChildren()) do
+    if obj.Name == "Part" and obj:IsA("BasePart") then
+        obj.Size = Vector3.new(3, 3, 3)
+    end
+end
+
 if gunAvailable and innocentGui then
     innocentGui.Enabled = not isLpMurd and (playersInRound[lp] ~= nil)
 end
