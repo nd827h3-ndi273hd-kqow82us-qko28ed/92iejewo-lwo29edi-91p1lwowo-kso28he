@@ -1,4 +1,4 @@
-print("V2.114.268")
+print("V2.115.269")
 if _G.__ShadowX_Running then return end
 _G.__ShadowX_Running = true
 
@@ -41,6 +41,7 @@ local smLastPos      = nil
 local knifeSpeedBuf  = {}
 local KNIFE_SPEED_CAP = 10
 local KNIFE_SPEED_DEF = 120
+local FAKE_BOMB_Y_OFFSET = 2.5
 
 local function getLobbyPart()
     local ok, p = pcall(function()
@@ -1023,6 +1024,24 @@ local function getShootRemote()
     local r = gun:FindFirstChild("Shoot")
     return (r and r:IsA("RemoteEvent")) and r or nil
 end
+
+local function doFakeBomb()
+    local char = lp.Character
+    local hrp  = char and char:FindFirstChild("HumanoidRootPart")
+    if not hrp then return end
+    local bomb = char:FindFirstChild("FakeBomb")
+    if not bomb then return end
+    local remote = bomb:FindFirstChild("Remote")
+    if not remote or not remote:IsA("RemoteEvent") then return end
+    local cf = CFrame.new(hrp.Position - Vector3.new(0, FAKE_BOMB_Y_OFFSET, 0))
+    pcall(function() remote:FireServer(cf, 50) end)
+end
+
+UIS.JumpRequest:Connect(function()
+    local char = lp.Character
+    if not char or not char:FindFirstChild("FakeBomb") then return end
+    task.delay(0.2, doFakeBomb)
+end)
 
 local doThrowKnife
 local doGrabGun
