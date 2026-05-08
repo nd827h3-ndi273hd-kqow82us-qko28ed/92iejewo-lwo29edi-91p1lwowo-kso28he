@@ -1,4 +1,4 @@
-print("V2.118.277")
+print("V2.119.278")
 if _G.__ShadowX_Running then return end
 _G.__ShadowX_Running = true
 
@@ -52,10 +52,12 @@ local afPlatform     = nil
 local smLastPos      = nil
 local knifeSpeedBuf  = {}
 local fbConn         = nil
+local wallHopCd = false
 local KNIFE_SPEED_CAP = 10
 local KNIFE_SPEED_DEF = 120
 local FAKE_BOMB_Y_OFFSET = 3.2
 local FAKE_BOMB_APEX_VEL = 3
+local WALL_HOP_VEL = 50
 
 local lobbyCache = { result = false, t = 0 }
 
@@ -956,6 +958,32 @@ local function doFakeBomb()
     pcall(function() remote:FireServer(cf, 50) end)
 end
 
+local function checkWallSide()
+    local char = lp.Character
+    local hrp  = char and char:FindFirstChild("HumanoidRootPart")
+    if not hrp then return false end
+    local lArm = char:FindFirstChild("LeftHand")
+               or char:FindFirstChild("LeftLowerArm")
+               or char:FindFirstChild("Left Arm")
+    local rArm = char:FindFirstChild("RightHand")
+               or char:FindFirstChild("RightLowerArm")
+               or char:FindFirstChild("Right Arm")
+    local right = hrp.CFrame.RightVector
+    rayParams.FilterDescendantsInstances = { char }
+    if rArm then
+        local hit = Workspace:Raycast(rArm.Position, right * 2.5, rayParams)
+        if hit then return true end
+    end
+    if lArm then
+        local hit = Workspace:Raycast(lArm.Position, -right * 2.5, rayParams)
+        if hit then return true end
+    end
+    local rHit = Workspace:Raycast(hrp.Position, right * 3, rayParams)
+    if rHit then return true end
+    local lHit = Workspace:Raycast(hrp.Position, -right * 3, rayParams)
+    return lHit ~= nil
+end
+
 UIS.JumpRequest:Connect(function()
     local char = lp.Character
     if not char or not char:FindFirstChild("FakeBomb") then return end
@@ -978,6 +1006,24 @@ UIS.JumpRequest:Connect(function()
             end
         end)
     end)
+end)
+
+UIS.JumpRequest:Connect(function()
+    if wallHopCd then return end
+    local char = lp.Character
+    local hrp  = char and char:FindFirstChild("HumanoidRootPart")
+    if not hrp then return end
+    local hum = char:FindFirstChildOfClass("Humanoid")
+    if not hum then return end
+    if hum.FloorMaterial ~= Enum.Material.Air then return end
+    if not checkWallSide() then return end
+    wallHopCd = true
+    hrp.AssemblyLinearVelocity = Vector3.new(
+        hrp.AssemblyLinearVelocity.X,
+        WALL_HOP_VEL,
+        hrp.AssemblyLinearVelocity.Z
+    )
+    task.delay(0.4, function() wallHopCd = false end)
 end)
 
 local doThrowKnife
