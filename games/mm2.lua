@@ -884,8 +884,8 @@ local function getAimPosition()
         elseif velY < -30 then yOff = -4
         elseif velY < -20 then yOff = -2
         elseif velY <  10 then yOff = -0.2
-        elseif velY >= 20 then yOff =  1
-        elseif velY >   5 then yOff =  0.7
+        elseif velY >= 25 then yOff =  0.2
+        elseif velY >   5 then yOff =  1
         else                   yOff =  0
         end
         predY = pos.Y + yOff
