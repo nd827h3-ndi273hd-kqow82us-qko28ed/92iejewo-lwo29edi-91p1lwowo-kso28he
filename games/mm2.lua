@@ -1,4 +1,4 @@
-print("V2.119.280")
+print("V2.119.281")
 if _G.__ShadowX_Running then return end
 _G.__ShadowX_Running = true
 
@@ -967,22 +967,22 @@ local function checkWallSide()
     local rArm = char:FindFirstChild("RightHand")
                or char:FindFirstChild("RightLowerArm")
                or char:FindFirstChild("Right Arm")
-    local rv   = hrp.CFrame.RightVector
+    local rv    = hrp.CFrame.RightVector
     local right = Vector3.new(rv.X, 0, rv.Z)
     if right.Magnitude < 0.01 then return false end
     right = right.Unit
     rayParams.FilterDescendantsInstances = { char }
     if rArm then
-        local hit = Workspace:Raycast(rArm.Position, right * 1.0, rayParams)
+        local hit = Workspace:Raycast(rArm.Position, right * 2.5, rayParams)
         if hit then return true end
     end
     if lArm then
-        local hit = Workspace:Raycast(lArm.Position, -right * 1.0, rayParams)
+        local hit = Workspace:Raycast(lArm.Position, -right * 2.5, rayParams)
         if hit then return true end
     end
-    local rHit = Workspace:Raycast(hrp.Position, right * 1.2, rayParams)
+    local rHit = Workspace:Raycast(hrp.Position, right * 3.0, rayParams)
     if rHit then return true end
-    local lHit = Workspace:Raycast(hrp.Position, -right * 1.2, rayParams)
+    local lHit = Workspace:Raycast(hrp.Position, -right * 3.0, rayParams)
     return lHit ~= nil
 end
 
