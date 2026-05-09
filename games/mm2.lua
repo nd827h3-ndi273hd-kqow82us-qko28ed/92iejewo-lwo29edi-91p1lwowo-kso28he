@@ -957,35 +957,6 @@ local function doFakeBomb()
     pcall(function() remote:FireServer(cf, 50) end)
 end
 
-local function checkWallSide()
-    local char = lp.Character
-    local hrp  = char and char:FindFirstChild("HumanoidRootPart")
-    if not hrp then return false end
-    local lArm = char:FindFirstChild("LeftHand")
-               or char:FindFirstChild("LeftLowerArm")
-               or char:FindFirstChild("Left Arm")
-    local rArm = char:FindFirstChild("RightHand")
-               or char:FindFirstChild("RightLowerArm")
-               or char:FindFirstChild("Right Arm")
-    local rv    = hrp.CFrame.RightVector
-    local right = Vector3.new(rv.X, 0, rv.Z)
-    if right.Magnitude < 0.01 then return false end
-    right = right.Unit
-    rayParams.FilterDescendantsInstances = { char }
-    if rArm then
-        local hit = Workspace:Raycast(rArm.Position, right * 2.5, rayParams)
-        if hit then return true end
-    end
-    if lArm then
-        local hit = Workspace:Raycast(lArm.Position, -right * 2.5, rayParams)
-        if hit then return true end
-    end
-    local rHit = Workspace:Raycast(hrp.Position, right * 3.0, rayParams)
-    if rHit then return true end
-    local lHit = Workspace:Raycast(hrp.Position, -right * 3.0, rayParams)
-    return lHit ~= nil
-end
-
 UIS.JumpRequest:Connect(function()
     local char = lp.Character
     if not char or not char:FindFirstChild("FakeBomb") then return end
@@ -1008,44 +979,6 @@ UIS.JumpRequest:Connect(function()
             end
         end)
     end)
-end)
-
-local jumpHeld    = false
-local wallHopLast = 0
-local WALL_HOP_CD = 0.2
-
-UIS.InputBegan:Connect(function(input, processed)
-    if processed then return end
-    if input.KeyCode == Enum.KeyCode.Space
-    or input.KeyCode == Enum.KeyCode.ButtonA then
-        jumpHeld = true
-    end
-end)
-
-UIS.InputEnded:Connect(function(input)
-    if input.KeyCode == Enum.KeyCode.Space
-    or input.KeyCode == Enum.KeyCode.ButtonA then
-        jumpHeld = false
-    end
-end)
-
-RunService.Heartbeat:Connect(function()
-    if not jumpHeld then return end
-    local now = tick()
-    if now - wallHopLast < WALL_HOP_CD then return end
-    local char = lp.Character
-    local hrp  = char and char:FindFirstChild("HumanoidRootPart")
-    if not hrp then return end
-    local hum = char:FindFirstChildOfClass("Humanoid")
-    if not hum then return end
-    if hum.FloorMaterial ~= Enum.Material.Air then return end
-    if not checkWallSide() then return end
-    wallHopLast = now
-    hrp.AssemblyLinearVelocity = Vector3.new(
-        hrp.AssemblyLinearVelocity.X,
-        WALL_HOP_VEL,
-        hrp.AssemblyLinearVelocity.Z
-    )
 end)
 
 local doThrowKnife
