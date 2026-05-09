@@ -168,12 +168,12 @@ local function setJumpPower(char)
     local hum = char:FindFirstChildOfClass("Humanoid")
     if hum then
         hum.UseJumpPower = true
-        lockHumanoidStat(hum, "JumpPower", 53)
+        lockHumanoidStat(hum, "JumpPower", 52)
     else
         char.ChildAdded:Connect(function(child)
             if child:IsA("Humanoid") then
                 child.UseJumpPower = true
-                lockHumanoidStat(child, "JumpPower", 53)
+                lockHumanoidStat(child, "JumpPower", 52)
             end
         end)
     end
@@ -1892,7 +1892,7 @@ do
 
     addSection("AUTO FEATURES")
     addLine("Walk speed locked to 18.")
-    addLine("Jump power locked to 53.")
+    addLine("Jump power locked to 52.")
     addLine("Silent aim with smart movement prediction.")
     addLine("Auto killall triggers after 20 seconds idle as Murderer.")
     addLine("Auto prank bomb double jump just hold prank bomb and jump.")
