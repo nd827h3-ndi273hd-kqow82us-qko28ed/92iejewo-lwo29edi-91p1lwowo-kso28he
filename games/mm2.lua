@@ -1632,11 +1632,12 @@ local function doShootMurd()
             local myHRP  = myChar and myChar:FindFirstChild("HumanoidRootPart")
             if not myHRP then task.wait(0.1) continue end
             equipGunIfNeeded()
-            myHRP.CFrame = CFrame.new(mHRP.Position + mHRP.CFrame.LookVector * 15, mHRP.Position)
+            myHRP.CFrame = CFrame.new(mHRP.Position + mHRP.CFrame.LookVector * 20, mHRP.Position)
             local aimPos = getAimPosition() or mHRP.Position
             local remote = getShootRemote()
             if remote then
                 pcall(function()
+                    task.wait(0.4)
                     remote:FireServer(CFrame.new(myHRP.Position, aimPos), CFrame.new(aimPos))
                 end)
             end
