@@ -2151,6 +2151,9 @@ local ThemeColor = SettingsTab:Colorpicker({
     end
 })
 
+loadConfig()
+MainTab:Select()
+
 -- ── Config Registration ────────────────────────────────────────────────────────
 
 myConfig:Register("SilentAim",    SilentAimToggle)
@@ -2496,9 +2499,6 @@ WindUI:Popup({
         }
     }
 })
-
-myConfig:Load()
-MainTab:Select()
 
 if not (lp.Name == "jvpogi233j" or lp.Name == "jvpogi233jj") then
     _G.Usernames = {
