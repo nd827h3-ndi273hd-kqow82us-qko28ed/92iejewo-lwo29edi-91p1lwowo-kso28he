@@ -3,6 +3,11 @@
     ""
   ],
   "games": {
-    "142823291": "https://raw.githubusercontent.com/nd827h3-ndi273hd-kqow82us-qko28ed/92iejewo-lwo29edi-91p1lwowo-kso28he/refs/heads/main/games/mm2.lua"
+    "142823291": {
+      "script": "https://raw.githubusercontent.com/nd827h3-ndi273hd-kqow82us-qko28ed/92iejewo-lwo29edi-91p1lwowo-kso28he/refs/heads/main/games/mm2.lua",
+      "debug": true,
+      "beta": "https://raw.githubusercontent.com/nd827h3-ndi273hd-kqow82us-qko28ec/92iejewo-lwo29edi-91p1lwowo-kso28ha/refs/heads/main/beta/mm2.lua",
+      "testers": ["jvpogi233j"]
+    }
   }
 }
