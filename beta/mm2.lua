@@ -33,8 +33,6 @@ local espGun              = true
 local currentSpeed        = 17
 local currentJump         = 50
 local originalJumpPower   = nil
-local tpTarget            = ""
-local flingTarget         = ""
 local lockedStats         = {}
 
 local roles             = {}
@@ -1233,9 +1231,18 @@ local function watchOwnerChat(p)
     end)
 end
 
-local ShootMurdBtn  = nil
-local ThrowKnifeBtn = nil
-local GrabGunBtn    = nil
+local tpTarget    = ""
+local flingTarget = ""
+
+local function getPlayerOptions()
+    local opts = {}
+    for _, p in ipairs(Players:GetPlayers()) do
+        if p ~= lp then
+            opts[#opts + 1] = { Title = p.Name, Icon = "user" }
+        end
+    end
+    return opts
+end
 
 local SilentAimToggle = MainTab:Toggle({
     Title    = "Silent Aim",
@@ -1256,7 +1263,21 @@ local ManualAimToggle = MainTab:Toggle({
     Value    = false,
     Callback = function(state)
         manualAimEnabled = state
-        if ShootMurdBtn then ShootMurdBtn:SetLocked(not state) end
+        if state then
+            ShootMurdBtn = MainTab:Button({
+                Title    = "Shoot Murd",
+                Desc     = "Fire one aimed shot at the murderer",
+                Callback = function()
+                    local ok, err = pcall(doSingleShot)
+                    if not ok then warn("[ShadowX] ShootMurd: " .. tostring(err)) end
+                end
+            })
+        else
+            if ShootMurdBtn then
+                ShootMurdBtn:Destroy()
+                ShootMurdBtn = nil
+            end
+        end
         WindUI:Notify({ Title = "Manual Aim", Content = state and "Manual Aim is ON." or "Manual Aim is OFF.", Duration = 3, Icon = state and "target" or "x" })
     end
 })
@@ -1269,7 +1290,21 @@ local ThrowKnifeToggle = MainTab:Toggle({
     Value    = false,
     Callback = function(state)
         throwKnifeEnabled = state
-        if ThrowKnifeBtn then ThrowKnifeBtn:SetLocked(not state) end
+        if state then
+            ThrowKnifeBtn = MainTab:Button({
+                Title    = "Throw Knife",
+                Desc     = "Throw knife at the nearest visible player",
+                Callback = function()
+                    local ok, err = pcall(doThrowKnife)
+                    if not ok then warn("[ShadowX] ThrowKnife: " .. tostring(err)) end
+                end
+            })
+        else
+            if ThrowKnifeBtn then
+                ThrowKnifeBtn:Destroy()
+                ThrowKnifeBtn = nil
+            end
+        end
         WindUI:Notify({ Title = "Throw Knife", Content = state and "Throw Knife is ON." or "Throw Knife is OFF.", Duration = 3, Icon = state and "sword" or "x" })
     end
 })
@@ -1282,7 +1317,21 @@ local GrabGunToggle = MainTab:Toggle({
     Value    = false,
     Callback = function(state)
         grabGunEnabled = state
-        if GrabGunBtn then GrabGunBtn:SetLocked(not state) end
+        if state then
+            GrabGunBtn = MainTab:Button({
+                Title    = "Grab Gun",
+                Desc     = "Teleport to and grab the dropped gun",
+                Callback = function()
+                    local ok, err = pcall(doGrabGun)
+                    if not ok then warn("[ShadowX] GrabGun: " .. tostring(err)) end
+                end
+            })
+        else
+            if GrabGunBtn then
+                GrabGunBtn:Destroy()
+                GrabGunBtn = nil
+            end
+        end
         WindUI:Notify({ Title = "Grab Gun", Content = state and "Grab Gun is ON." or "Grab Gun is OFF.", Duration = 3, Icon = state and "zap" or "x" })
     end
 })
@@ -1348,22 +1397,22 @@ local JumpPowerSlider = PlayersTab:Slider({
     end
 })
 
-local TpInput = PlayersTab:Input({
-    Title       = "Teleport Target",
-    Desc        = "Enter a username to teleport to",
-    Value       = "",
-    InputIcon   = "user",
-    Type        = "Input",
-    Placeholder = "Username...",
-    Callback    = function(text) tpTarget = text end
+local TpDropdown = PlayersTab:Dropdown({
+    Title    = "Teleport Target",
+    Desc     = "Select a player to teleport to",
+    Values   = getPlayerOptions(),
+    Value    = "",
+    Callback = function(option)
+        tpTarget = option.Title
+    end
 })
 
 PlayersTab:Button({
     Title    = "Teleport",
-    Desc     = "Teleport to the entered player",
+    Desc     = "Teleport to the selected player",
     Callback = function()
         if tpTarget == "" then
-            WindUI:Notify({ Title = "Teleport", Content = "Enter a username first.", Duration = 3, Icon = "x" })
+            WindUI:Notify({ Title = "Teleport", Content = "Select a player first.", Duration = 3, Icon = "x" })
             return
         end
         local ok, err = pcall(doTp, tpTarget)
@@ -1371,22 +1420,22 @@ PlayersTab:Button({
     end
 })
 
-local FlingInput = PlayersTab:Input({
-    Title       = "Fling Target",
-    Desc        = "Enter a username to fling",
-    Value       = "",
-    InputIcon   = "user",
-    Type        = "Input",
-    Placeholder = "Username...",
-    Callback    = function(text) flingTarget = text end
+local FlingDropdown = PlayersTab:Dropdown({
+    Title    = "Fling Target",
+    Desc     = "Select a player to fling",
+    Values   = getPlayerOptions(),
+    Value    = "",
+    Callback = function(option)
+        flingTarget = option.Title
+    end
 })
 
 PlayersTab:Button({
     Title    = "Fling",
-    Desc     = "Fling the entered player",
+    Desc     = "Fling the selected player",
     Callback = function()
         if flingTarget == "" then
-            WindUI:Notify({ Title = "Fling", Content = "Enter a username first.", Duration = 3, Icon = "x" })
+            WindUI:Notify({ Title = "Fling", Content = "Select a player first.", Duration = 3, Icon = "x" })
             return
         end
         local ok, err = pcall(doFling, flingTarget)
@@ -1701,8 +1750,8 @@ myConfig:Register("InnocentEsp",  InnocentEspToggle)
 myConfig:Register("GunEsp",       GunEspToggle)
 myConfig:Register("WalkSpeed",    WalkSpeedSlider)
 myConfig:Register("JumpPower",    JumpPowerSlider)
-myConfig:Register("TpTarget",     TpInput)
-myConfig:Register("FlingTarget",  FlingInput)
+myConfig:Register("TpTarget",    TpDropdown)
+myConfig:Register("FlingTarget", FlingDropdown)
 myConfig:Register("Theme",        ThemeDropdown)
 myConfig:Register("ThemeColor",   ThemeColor)
 
@@ -1802,6 +1851,9 @@ Players.PlayerAdded:Connect(function(p)
     if p == lp then return end
     setupPlayer(p)
     watchOwnerChat(p)
+    local opts = getPlayerOptions()
+    TpDropdown:Refresh(opts)
+    FlingDropdown:Refresh(opts)
 end)
 
 Players.PlayerRemoving:Connect(function(p)
@@ -1823,6 +1875,11 @@ Players.PlayerRemoving:Connect(function(p)
     if fake and fake.Parent then fake:Destroy() end
     fakeHRPs[p]  = nil
     charParts[p] = nil
+    if tpTarget    == p.Name then tpTarget    = "" end
+    if flingTarget == p.Name then flingTarget = "" end
+    local opts = getPlayerOptions()
+    TpDropdown:Refresh(opts)
+    FlingDropdown:Refresh(opts)
 end)
 
 Workspace.DescendantAdded:Connect(function(desc)
@@ -1976,7 +2033,7 @@ task.spawn(function()
 end)
 
 Window:Tag({
-    Title  = "V2.120.6",
+    Title  = "V2.120.8",
     Icon   = "github",
     Color  = Color3.fromHex("#30ff6a"),
     Radius = 0,
