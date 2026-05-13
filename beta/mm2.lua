@@ -1240,8 +1240,7 @@ local GrabGunBtn    = nil
 local SilentAimToggle = MainTab:Toggle({
     Title    = "Silent Aim",
     Desc     = "Auto-aims and fires at the murderer on left click",
-    Icon     = "crosshair",
-    Type     = "Checkbox",
+    Type     = "Switch",
     Value    = false,
     Callback = function(state)
         silentAimEnabled = state
@@ -1262,16 +1261,6 @@ local ManualAimToggle = MainTab:Toggle({
     end
 })
 
-ShootMurdBtn = MainTab:Button({
-    Title    = "Shoot Murd",
-    Desc     = "Fire one aimed shot at the murderer",
-    Locked   = true,
-    Callback = function()
-        local ok, err = pcall(doSingleShot)
-        if not ok then warn("[ShadowX] ShootMurd: " .. tostring(err)) end
-    end
-})
-
 local ThrowKnifeToggle = MainTab:Toggle({
     Title    = "Throw Knife",
     Desc     = "Shows Throw Knife button when enabled",
@@ -1285,16 +1274,6 @@ local ThrowKnifeToggle = MainTab:Toggle({
     end
 })
 
-ThrowKnifeBtn = MainTab:Button({
-    Title    = "Throw Knife",
-    Desc     = "Throw knife at the nearest visible player",
-    Locked   = true,
-    Callback = function()
-        local ok, err = pcall(doThrowKnife)
-        if not ok then warn("[ShadowX] ThrowKnife: " .. tostring(err)) end
-    end
-})
-
 local GrabGunToggle = MainTab:Toggle({
     Title    = "Grab Gun",
     Desc     = "Shows Grab Gun button when enabled",
@@ -1305,16 +1284,6 @@ local GrabGunToggle = MainTab:Toggle({
         grabGunEnabled = state
         if GrabGunBtn then GrabGunBtn:SetLocked(not state) end
         WindUI:Notify({ Title = "Grab Gun", Content = state and "Grab Gun is ON." or "Grab Gun is OFF.", Duration = 3, Icon = state and "zap" or "x" })
-    end
-})
-
-GrabGunBtn = MainTab:Button({
-    Title    = "Grab Gun",
-    Desc     = "Teleport to and grab the dropped gun",
-    Locked   = true,
-    Callback = function()
-        local ok, err = pcall(doGrabGun)
-        if not ok then warn("[ShadowX] GrabGun: " .. tostring(err)) end
     end
 })
 
@@ -1360,7 +1329,7 @@ local WalkSpeedSlider = PlayersTab:Slider({
     Title = "Walk Speed",
     Desc  = "Adjust your walk speed",
     Step  = 1,
-    Value = { Min = 16, Max = 100, Default = 17 },
+    Value = { Min = 0, Max = 100, Default = 17 },
     Callback = function(value)
         currentSpeed = value
         updateLockedStat("WalkSpeed", value)
