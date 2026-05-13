@@ -32,6 +32,7 @@ local espMurder           = true
 local espSheriff          = true
 local espInnocent         = true
 local espGun              = true
+local invisActive         = false
 local currentSpeed        = 17
 local currentJump         = 50
 local originalJumpPower   = nil
@@ -1355,8 +1356,8 @@ nLayout.HorizontalAlignment = Enum.HorizontalAlignment.Right
 nLayout.VerticalAlignment   = Enum.VerticalAlignment.Top
 nLayout.Parent              = nFrame
 
-local BTN_W = 155
-local BTN_H = 40
+local BTN_W = 160
+local BTN_H = 45
 
 local C_IDLE  = ColorSequence.new({
     ColorSequenceKeypoint.new(0, Color3.fromRGB(255, 40, 70)),
@@ -1498,8 +1499,13 @@ local function setCharTransparency(char, t)
         end
     end
 end
-:
+
 local function doInvisToggle()
+    if invisActive then
+        WindUI:Notify({ Title = "Invisible", Content = "Invisible is currently in action, Please wait!.", Duration = 3, Icon = "x" })
+        return
+    end
+    invisActive = true
     if not invisibleEnabled then
         WindUI:Notify({ Title = "Invisible", Content = "Enable Invisible toggle first.", Duration = 3, Icon = "x" })
         return
@@ -1559,6 +1565,7 @@ local function doInvisToggle()
         resetInvisBtn()
         WindUI:Notify({ Title = "Invisible", Content = "Back to visible.", Duration = 2, Icon = "eye" })
     end
+    invisActive = false
 end
 
 nInvisBtn, invisNativeLbl = makeNativeBtn("👁  Invisible", doInvisToggle)
