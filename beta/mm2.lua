@@ -2041,6 +2041,7 @@ lp.CharacterAdded:Connect(function(char)
                 if stray then stray:Destroy() end
                 invisSeat   = nil
                 isInvisible = false
+                invisActive = false
                 resetInvisBtn()
             end
         end)
