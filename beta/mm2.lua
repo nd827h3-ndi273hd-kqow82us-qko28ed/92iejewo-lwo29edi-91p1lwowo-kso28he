@@ -1252,7 +1252,7 @@ local SilentAimToggle = MainTab:Toggle({
     Value    = false,
     Callback = function(state)
         silentAimEnabled = state
-        WindUI:Notify({ Title = "Silent Aim", Content = state and "Silent Aim is ON." or "Silent Aim is OFF.", Duration = 3, Icon = state and "crosshair" or "x" })
+        myConfig:Save()
     end
 })
 
@@ -1279,7 +1279,7 @@ local ManualAimToggle = MainTab:Toggle({
                 ShootMurdBtn = nil
             end
         end
-        WindUI:Notify({ Title = "Manual Aim", Content = state and "Manual Aim is ON." or "Manual Aim is OFF.", Duration = 3, Icon = state and "target" or "x" })
+        myConfig:Save()
     end
 })
 
@@ -1306,7 +1306,7 @@ local ThrowKnifeToggle = MainTab:Toggle({
                 ThrowKnifeBtn = nil
             end
         end
-        WindUI:Notify({ Title = "Throw Knife", Content = state and "Throw Knife is ON." or "Throw Knife is OFF.", Duration = 3, Icon = state and "sword" or "x" })
+        myConfig:Save()
     end
 })
 
@@ -1333,7 +1333,7 @@ local GrabGunToggle = MainTab:Toggle({
                 GrabGunBtn = nil
             end
         end
-        WindUI:Notify({ Title = "Grab Gun", Content = state and "Grab Gun is ON." or "Grab Gun is OFF.", Duration = 3, Icon = state and "zap" or "x" })
+        myConfig:Save()
     end
 })
 
@@ -1345,7 +1345,7 @@ local AutoGrabGunToggle = MainTab:Toggle({
     Value    = false,
     Callback = function(state)
         autoGrabGunEnabled = state
-        WindUI:Notify({ Title = "Auto Grab Gun", Content = state and "Auto Grab Gun is ON." or "Auto Grab Gun is OFF.", Duration = 3, Icon = state and "magnet" or "x" })
+        myConfig:Save()
     end
 })
 
@@ -1357,7 +1357,7 @@ local FakeBombToggle = MainTab:Toggle({
     Value    = false,
     Callback = function(state)
         fakeBombEnabled = state
-        WindUI:Notify({ Title = "Fake Bomb", Content = state and "Fake Bomb is ON." or "Fake Bomb is OFF.", Duration = 3, Icon = state and "zap-off" or "x" })
+        myConfig:Save()
     end
 })
 
@@ -1452,7 +1452,7 @@ local InfiniteJumpToggle = PlayersTab:Toggle({
     Value    = false,
     Callback = function(state)
         infiniteJumpEnabled = state
-        WindUI:Notify({ Title = "Infinite Jump", Content = state and "Infinite Jump is ON." or "Infinite Jump is OFF.", Duration = 3, Icon = state and "arrow-up" or "x" })
+        myConfig:Save()
     end
 })
 
@@ -1477,7 +1477,7 @@ local MurderEspToggle = VisualsTab:Toggle({
                 end
             end
         end
-        WindUI:Notify({ Title = "Murder ESP", Content = state and "ON." or "OFF.", Duration = 3, Icon = state and "eye" or "eye-off" })
+        myConfig:Save()
     end
 })
 
@@ -1506,7 +1506,7 @@ local SheriffEspToggle = VisualsTab:Toggle({
                 end
             end
         end
-        WindUI:Notify({ Title = "Sheriff ESP", Content = state and "ON." or "OFF.", Duration = 3, Icon = state and "eye" or "eye-off" })
+        myConfig:Save()
     end
 })
 
@@ -1527,7 +1527,7 @@ local InnocentEspToggle = VisualsTab:Toggle({
                 end
             end
         end
-        WindUI:Notify({ Title = "Innocent ESP", Content = state and "ON." or "OFF.", Duration = 3, Icon = state and "eye" or "eye-off" })
+        myConfig:Save()
     end
 })
 
@@ -1551,7 +1551,7 @@ local GunEspToggle = VisualsTab:Toggle({
                 end
             end
         end
-        WindUI:Notify({ Title = "Gun ESP", Content = state and "ON." or "OFF.", Duration = 3, Icon = state and "eye" or "eye-off" })
+        myConfig:Save()
     end
 })
 
@@ -1676,24 +1676,6 @@ CreditsTab:Paragraph({
             end,
         }
     }
-})
-
-SettingsTab:Button({
-    Title    = "Save Configuration",
-    Desc     = "Save all current settings to file",
-    Callback = function()
-        myConfig:Save()
-        WindUI:Notify({ Title = "Config Saved", Content = "Settings saved.", Duration = 3, Icon = "save" })
-    end
-})
-
-SettingsTab:Button({
-    Title    = "Load Configuration",
-    Desc     = "Load saved settings from file",
-    Callback = function()
-        myConfig:Load()
-        WindUI:Notify({ Title = "Config Loaded", Content = "Settings loaded.", Duration = 3, Icon = "folder-open" })
-    end
 })
 
 local ThemeDropdown = SettingsTab:Dropdown({
@@ -2034,7 +2016,7 @@ task.spawn(function()
 end)
 
 Window:Tag({
-    Title  = "V2.120.8",
+    Title  = "V2.120.10",
     Icon   = "github",
     Color  = Color3.fromHex("#30ff6a"),
     Radius = 0,
@@ -2061,3 +2043,5 @@ WindUI:Popup({
         }
     }
 })
+
+myConfig:Load()
