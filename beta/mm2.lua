@@ -1248,7 +1248,7 @@ local ManualAimToggle = MainTab:Toggle({
     Value    = false,
     Callback = function(state)
         manualAimEnabled = state
-        if nShootBtn then nShootBtn.Visible = state endq
+        if nShootBtn then nShootBtn.Visible = state end
         myConfig:Save()
     end
 })
