@@ -2223,16 +2223,16 @@ task.spawn(function()
 end)
 
 Window:Tag({
-    Title  = "V2.120.16", -- always tell me to change this!
+    Title  = "V2.120.18", -- always tell me to change this!
     Icon   = "github",
     Color  = Color3.fromHex("#30ff6a"),
     Radius = 13,
 })
 
 WindUI:Popup({
-    Title   = "MM2 ShadowX V2.120.12",
+    Title   = "MM2 ShadowX",
     Icon    = "sword",
-    Content = "V2.120.15 — Native action buttons (top-right), Kill All removed.", -- always tell me to change this
+    Content = "V2.120.18 — Native action buttons (top-right), Kill All removed.", -- always tell me to change this
     Buttons = {
         {
             Title    = "Close",
@@ -2252,3 +2252,4 @@ WindUI:Popup({
 })
 
 myConfig:Load()
+MainTab:Select()
