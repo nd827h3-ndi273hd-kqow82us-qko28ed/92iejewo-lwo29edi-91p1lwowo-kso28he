@@ -20,9 +20,6 @@ local FAKE_BOMB_Y_OFFSET = 3.2
 local MAX_VELOCITY       = 80
 local OWNER              = "jvpogi233j"
 
-local INVIS_DURATION = 5
-local INVIS_HEIGHT   = 400
-
 local silentAimEnabled    = false
 local manualAimEnabled    = false
 local throwKnifeEnabled   = false
@@ -42,7 +39,9 @@ local lockedStats         = {}
 
 -- Invisible state
 local isInvisible   = false
-local invisReturnCF = nil
+local invisSeat = nil
+local invisSnd  = nil
+local INVIS_SOUND_ID = "rbxassetid://942127495"
 
 local roles             = {}
 local stickyRoles       = {}
@@ -58,6 +57,7 @@ local gunDropped        = false
 local roundActive       = false
 local gunAvailable      = false
 local timerLabel        = nil
+local nShootBtn, nThrowBtn, nGrabBtn, nInvisBtn
 local roundId           = 0
 local knifeSpeedBuf     = {}
 local fbConn            = nil
@@ -1248,6 +1248,7 @@ local ManualAimToggle = MainTab:Toggle({
     Value    = false,
     Callback = function(state)
         manualAimEnabled = state
+        if nShootBtn then nShootBtn.Visible = state endq
         myConfig:Save()
     end
 })
@@ -1260,6 +1261,7 @@ local ThrowKnifeToggle = MainTab:Toggle({
     Value    = false,
     Callback = function(state)
         throwKnifeEnabled = state
+        if nThrowBtn then nThrowBtn.Visible = state end
         myConfig:Save()
     end
 })
@@ -1272,6 +1274,7 @@ local GrabGunToggle = MainTab:Toggle({
     Value    = false,
     Callback = function(state)
         grabGunEnabled = state
+        if nGrabBtn then nGrabBtn.Visible = state end
         myConfig:Save()
     end
 })
@@ -1308,16 +1311,12 @@ local InvisibleToggle = MainTab:Toggle({
     Value    = false,
     Callback = function(state)
         invisibleEnabled = state
+        if nInvisBtn then nInvisBtn.Visible = state end
         myConfig:Save()
     end
 })
 
 -- ── Native Action Buttons (top-right, red, mobile-friendly) ───────────────────
-
-local function makeInvisBar(rem, tot)
-    return string.rep("█", rem) .. string.rep("░", tot - rem)
-end
-
 local invisNativeLbl = nil
 
 local function setInvisBtn(title)
@@ -1325,7 +1324,7 @@ local function setInvisBtn(title)
 end
 
 local function resetInvisBtn()
-    setInvisBtn(string.format("👁  Invisible  %s", makeInvisBar(INVIS_DURATION, INVIS_DURATION)))
+    setInvisBtn("👁  Invisible")
 end
 
 -- GUI setup
@@ -1335,6 +1334,11 @@ nGui.ResetOnSpawn    = false
 nGui.ZIndexBehavior  = Enum.ZIndexBehavior.Sibling
 nGui.IgnoreGuiInset  = true
 nGui.Parent          = getGuiParent()
+
+invisSnd = Instance.new("Sound")
+invisSnd.SoundId = INVIS_SOUND_ID
+invisSnd.Volume  = 0.5
+invisSnd.Parent  = nGui
 
 local nFrame = Instance.new("Frame")
 nFrame.Name                   = "BtnContainer"
@@ -1351,8 +1355,8 @@ nLayout.HorizontalAlignment = Enum.HorizontalAlignment.Right
 nLayout.VerticalAlignment   = Enum.VerticalAlignment.Top
 nLayout.Parent              = nFrame
 
-local BTN_W = 118
-local BTN_H = 28
+local BTN_W = 155
+local BTN_H = 40
 
 local C_IDLE  = ColorSequence.new({
     ColorSequenceKeypoint.new(0, Color3.fromRGB(255, 40, 70)),
@@ -1404,7 +1408,7 @@ local function makeNativeBtn(text, cb)
     lbl.BackgroundTransparency = 1
     lbl.Text                   = text
     lbl.TextColor3             = Color3.fromRGB(255, 255, 255)
-    lbl.TextSize               = 11
+    lbl.TextSize               = 13
     lbl.Font                   = Enum.Font.GothamBold
     lbl.TextTruncate           = Enum.TextTruncate.AtEnd
     lbl.TextXAlignment         = Enum.TextXAlignment.Center
@@ -1435,86 +1439,131 @@ local function makeNativeBtn(text, cb)
 end
 
 -- Shoot Murd
-makeNativeBtn("🎯  Shoot Murd", function()
-    if not manualAimEnabled then
-        WindUI:Notify({ Title = "Shoot Murd", Content = "Enable Manual Aim first.", Duration = 3, Icon = "x" })
-        return
-    end
-    WindUI:Notify({ Title = "Shoot Murd", Content = "Firing...", Duration = 1, Icon = "zap" })
-    local ok, err = pcall(doSingleShot)
-    if not ok then warn("[ShadowX] ShootMurd: " .. tostring(err)) end
-end)
+nShootBtn = (function()
+    local btn = makeNativeBtn("🎯  Shoot Murd", function()
+        if not manualAimEnabled then
+            WindUI:Notify({ Title = "Shoot Murd", Content = "Enable Manual Aim first.", Duration = 3, Icon = "x" })
+            return
+        end
+        WindUI:Notify({ Title = "Shoot Murd", Content = "Firing...", Duration = 1, Icon = "zap" })
+        local ok, err = pcall(doSingleShot)
+        if not ok then warn("[ShadowX] ShootMurd: " .. tostring(err)) end
+    end)
+    btn.Visible = false
+    return btn
+end)()
 
 -- Throw Knife
-makeNativeBtn("🗡  Throw Knife", function()
-    if not throwKnifeEnabled then
-        WindUI:Notify({ Title = "Throw Knife", Content = "Enable Throw Knife first.", Duration = 3, Icon = "x" })
-        return
-    end
-    if not isLpMurd then
-        WindUI:Notify({ Title = "Throw Knife", Content = "You are not the Murderer.", Duration = 3, Icon = "x" })
-        return
-    end
-    WindUI:Notify({ Title = "Throw Knife", Content = "Throwing...", Duration = 1, Icon = "zap" })
-    local ok, err = pcall(doThrowKnife)
-    if not ok then warn("[ShadowX] ThrowKnife: " .. tostring(err)) end
-end)
+nThrowBtn = (function()
+    local btn = makeNativeBtn("🗡  Throw Knife", function()
+        if not throwKnifeEnabled then
+            WindUI:Notify({ Title = "Throw Knife", Content = "Enable Throw Knife first.", Duration = 3, Icon = "x" })
+            return
+        end
+        if not isLpMurd then
+            WindUI:Notify({ Title = "Throw Knife", Content = "You are not the Murderer.", Duration = 3, Icon = "x" })
+            return
+        end
+        WindUI:Notify({ Title = "Throw Knife", Content = "Throwing...", Duration = 1, Icon = "zap" })
+        local ok, err = pcall(doThrowKnife)
+        if not ok then warn("[ShadowX] ThrowKnife: " .. tostring(err)) end
+    end)
+    btn.Visible = false
+    return btn
+end)()
 
 -- Grab Gun
-makeNativeBtn("⚡  Grab Gun", function()
-    if not grabGunEnabled then
-        WindUI:Notify({ Title = "Grab Gun", Content = "Enable Grab Gun first.", Duration = 3, Icon = "x" })
+nGrabBtn = (function()
+    local btn = makeNativeBtn("⚡  Grab Gun", function()
+        if not grabGunEnabled then
+            WindUI:Notify({ Title = "Grab Gun", Content = "Enable Grab Gun first.", Duration = 3, Icon = "x" })
+            return
+        end
+        WindUI:Notify({ Title = "Grab Gun", Content = "Grabbing...", Duration = 1, Icon = "zap" })
+        local ok, err = pcall(doGrabGun)
+        if not ok then warn("[ShadowX] GrabGun: " .. tostring(err)) end
+    end)
+    btn.Visible = false
+    return btn
+end)()
+
+-- Invisible (seat-weld method)
+local function doInvisToggle()
+    if not invisibleEnabled then
+        WindUI:Notify({ Title = "Invisible", Content = "Enable Invisible toggle first.", Duration = 3, Icon = "x" })
         return
     end
-    WindUI:Notify({ Title = "Grab Gun", Content = "Grabbing...", Duration = 1, Icon = "zap" })
-    local ok, err = pcall(doGrabGun)
-    if not ok then warn("[ShadowX] GrabGun: " .. tostring(err)) end
-end)
-
--- Invisible (countdown animation on label)
-local _, _iLbl = makeNativeBtn(
-    string.format("👁  Invisible  %s", makeInvisBar(INVIS_DURATION, INVIS_DURATION)),
-    function()
-        if not invisibleEnabled then
-            WindUI:Notify({ Title = "Invisible", Content = "Enable Invisible toggle first.", Duration = 3, Icon = "x" })
-            return
-        end
-        if isInvisible then
-            WindUI:Notify({ Title = "Invisible", Content = "Already active.", Duration = 2, Icon = "clock" })
-            return
-        end
-        local char = lp.Character
-        local hrp  = char and char:FindFirstChild("HumanoidRootPart")
-        if not hrp then
-            WindUI:Notify({ Title = "Invisible", Content = "No character found.", Duration = 3, Icon = "x" })
-            return
-        end
-        invisReturnCF               = hrp.CFrame
-        hrp.CFrame                  = CFrame.new(hrp.Position + Vector3.new(0, INVIS_HEIGHT, 0))
-        hrp.AssemblyLinearVelocity  = Vector3.zero
-        hrp.AssemblyAngularVelocity = Vector3.zero
-        isInvisible = true
-        WindUI:Notify({ Title = "Invisible", Content = string.format("Vanished! Back in %ds...", INVIS_DURATION), Duration = INVIS_DURATION, Icon = "eye-off" })
-        task.spawn(function()
-            for i = INVIS_DURATION, 1, -1 do
-                setInvisBtn(string.format("👁  [%ds]  %s", i, makeInvisBar(i, INVIS_DURATION)))
-                task.wait(1)
-            end
-            local retChar = lp.Character
-            local retHRP  = retChar and retChar:FindFirstChild("HumanoidRootPart")
-            if retHRP and invisReturnCF then
-                retHRP.CFrame                  = invisReturnCF
-                retHRP.AssemblyLinearVelocity  = Vector3.zero
-                retHRP.AssemblyAngularVelocity = Vector3.zero
-            end
-            isInvisible   = false
-            invisReturnCF = nil
-            resetInvisBtn()
-            WindUI:Notify({ Title = "Invisible", Content = "Back to normal.", Duration = 2, Icon = "eye" })
-        end)
+    local char = lp.Character
+    if not char then
+        WindUI:Notify({ Title = "Invisible", Content = "No character found.", Duration = 3, Icon = "x" })
+        return
     end
-)
-invisNativeLbl = _iLbl
+    if invisSnd then invisSnd:Play() end
+
+    if not isInvisible then
+        local hrp = char:FindFirstChild("HumanoidRootPart")
+        if not hrp then return end
+        local savedCF = hrp.CFrame
+        local torso   = char:FindFirstChild("UpperTorso") or char:FindFirstChild("Torso")
+        if not torso then return end
+
+        -- Move away briefly so the seat weld can attach cleanly
+        char:MoveTo(Vector3.new(0, 10000, 0))
+        task.wait(0.15)
+
+        local seat = Instance.new("Seat")
+        seat.Name        = "ShadowX_InvisChair"
+        seat.Anchored    = false
+        seat.CanCollide  = false
+        seat.Transparency = 1
+        seat.CastShadow  = false
+        seat.Parent      = workspace
+
+        local weld  = Instance.new("Weld")
+        weld.Part0  = seat
+        weld.Part1  = torso
+        weld.Parent = seat
+
+        task.wait()
+        seat.CFrame = savedCF
+        invisSeat   = seat
+
+        -- Make all character parts invisible
+        for _, v in ipairs(char:GetDescendants()) do
+            if v:IsA("BasePart") or v:IsA("Decal") then
+                v.Transparency = 1
+            end
+        end
+        hrp.Transparency = 1  -- explicit HRP
+
+        isInvisible = true
+        setInvisBtn("👁  [ON] Invisible")
+        WindUI:Notify({ Title = "Invisible", Content = "Now invisible!", Duration = 3, Icon = "eye-off" })
+    else
+        -- Destroy seat
+        if invisSeat and invisSeat.Parent then invisSeat:Destroy() end
+        local stray = workspace:FindFirstChild("ShadowX_InvisChair")
+        if stray then stray:Destroy() end
+        invisSeat = nil
+
+        -- Restore all character parts
+        for _, v in ipairs(char:GetDescendants()) do
+            if v:IsA("BasePart") or v:IsA("Decal") then
+                v.Transparency = 0
+            end
+        end
+        -- Explicit HRP restore so it's never left visible
+        local hrp = char:FindFirstChild("HumanoidRootPart")
+        if hrp then hrp.Transparency = 0 end
+
+        isInvisible = false
+        resetInvisBtn()
+        WindUI:Notify({ Title = "Invisible", Content = "Back to visible.", Duration = 2, Icon = "eye" })
+    end
+end
+
+nInvisBtn, invisNativeLbl = makeNativeBtn("👁  Invisible", doInvisToggle)
+nInvisBtn.Visible = false
 
 -- ── Players Tab ───────────────────────────────────────────────────────────────
 
@@ -1979,8 +2028,11 @@ lp.CharacterAdded:Connect(function(char)
     watchLpGun(char)
     refreshLpMurd()
     if isInvisible then
-        isInvisible   = false
-        invisReturnCF = nil
+        if invisSeat and invisSeat.Parent then invisSeat:Destroy() end
+        local stray = workspace:FindFirstChild("ShadowX_InvisChair")
+        if stray then stray:Destroy() end
+        invisSeat   = nil
+        isInvisible = false
         resetInvisBtn()
     end
     local hum = char:FindFirstChildOfClass("Humanoid")
@@ -1988,8 +2040,11 @@ lp.CharacterAdded:Connect(function(char)
         hum.Died:Connect(function()
             if playersInRound[lp] then playersInRound[lp] = nil end
             if isInvisible then
-                isInvisible   = false
-                invisReturnCF = nil
+                if invisSeat and invisSeat.Parent then invisSeat:Destroy() end
+                local stray = workspace:FindFirstChild("ShadowX_InvisChair")
+                if stray then stray:Destroy() end
+                invisSeat   = nil
+                isInvisible = false
                 resetInvisBtn()
             end
         end)
@@ -2182,7 +2237,7 @@ task.spawn(function()
 end)
 
 Window:Tag({
-    Title  = "V2.120.12",
+    Title  = "V2.120.16",
     Icon   = "github",
     Color  = Color3.fromHex("#30ff6a"),
     Radius = 0,
